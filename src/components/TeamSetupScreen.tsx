@@ -213,7 +213,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({ onStartGame })
               </h2>
             </div>
             <div className="text-[11px] sm:text-xs font-bold text-[#35556e] bg-[#eef5fa] border border-[#cde0ed] rounded-lg px-2.5 sm:px-3 py-1">
-              Başlangıç: 100 BP · 20 Türkçe Sorusu (20 sn) · 25 Dakika · En Çok Gayrimenkul Kazanır
+              Başlangıç: 100 BP · 15 Türkçe Sorusu (1 dk) · 25 Dakika · En Çok Gayrimenkul Kazanır
             </div>
           </div>
 

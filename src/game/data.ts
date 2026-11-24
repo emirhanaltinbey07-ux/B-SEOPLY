@@ -14,14 +14,14 @@ export const INITIAL_TEAM_BP = 100; // Her takım tam 100 BP ile başlar
 export const START_PASS_BONUS_BP = 50; // Başlangıca her dönüşte +50 BP
 export const REWARD_TILE_BP = 10; // Ödül karesinde +10 BP
 export const JAIL_BAIL_BP = 50; // Hapisten hemen çıkma bedeli: 50 BP
-export const QUESTION_TIME_LIMIT_SECONDS = 20; // Her soru için 20 saniye süre
+export const QUESTION_TIME_LIMIT_SECONDS = 60; // Her soru için 1 dakika (60 saniye) süre
 export const CORRECT_ANSWER_BP = 50; // Her doğru soru +50 BP
 export const WRONG_ANSWER_BP = -25;
 export const BANK_LOAN_PRINCIPAL = 50;
 export const BANK_LOAN_REPAYMENT = 60;
 export const BANK_BUYBACK_RATIO = 0.7; // Bankaya satışta %70
 export const MAX_PEER_LOAN_RATIO = 1.2; // En fazla %120 geri ödeme
-export const QUESTIONS_PER_TEAM = 7; // 20 soruluk havuz 3 takım arasında oynanır (takım başı maks. 7)
+export const QUESTIONS_PER_TEAM = 5; // 15 soruluk havuz 3 takım arasında eşit oynanır (takım başı 5)
 
 export const PAWN_COLORS: PawnColorOption[] = [
   { id: 'mavi', name: 'Boğaz Mavisi', hex: '#1464d6', darkHex: '#0d4599' },
@@ -402,7 +402,7 @@ export const BOARD_TILES: BoardTile[] = [
 ];
 
 /**
- * OFFICIAL TEACHER ANSWER KEY (1..20)
+ * OFFICIAL TEACHER ANSWER KEY (1..15)
  * NEVER revealed to students before answering!
  */
 export const OFFICIAL_ANSWER_KEY: Record<number, OptionLetter> = {
@@ -421,15 +421,10 @@ export const OFFICIAL_ANSWER_KEY: Record<number, OptionLetter> = {
   13: 'C',
   14: 'B',
   15: 'A',
-  16: 'D',
-  17: 'C',
-  18: 'A',
-  19: 'B',
-  20: 'C',
 };
 
 /**
- * THE EXACT, UNALTERED 20 TURKISH QUESTIONS PROVIDED BY THE USER.
+ * THE EXACT, UNALTERED 15 TURKISH QUESTIONS PROVIDED BY THE USER.
  * ZERO extra questions, ZERO edited stems or options!
  */
 export const QUESTION_CARDS: QuestionCard[] = [
@@ -661,81 +656,6 @@ export const QUESTION_CARDS: QuestionCard[] = [
     correctAnswer: 'A',
     explanation:
       'A seçeneğinde sulama işini yapan belli değildir; "Bahçedeki güller" sözde özne, "sulandı" edilgen çatılıdır.',
-  },
-  {
-    number: 16,
-    id: 'soru-16',
-    topicTag: 'Edilgen - Geçişsiz Fiil',
-    stem: 'Aşağıdaki cümlelerden hangisinin yüklemi öznesine göre edilgen, nesnesine göre geçişsizdir ?',
-    options: [
-      { letter: 'A', text: 'Yarın seni okulun önünde bekliyoruz.' },
-      { letter: 'B', text: 'Dükkanı kapatırken yeri kontrol ettik.' },
-      { letter: 'C', text: 'Yaşım ilerledikçe onu daha da anlıyorum.' },
-      { letter: 'D', text: 'Kapanan yollar gayretli çalışmalarla açıldı.' },
-    ],
-    correctAnswer: 'D',
-    explanation:
-      'D seçeneğindeki "açıldı" fiili -l edilgenlik ekini almıştır (sözde özne: Kapanan yollar → Edilgen) ve nesne alamadığı için geçişsizdir.',
-  },
-  {
-    number: 17,
-    id: 'soru-17',
-    topicTag: 'Özne - Yüklem İlişkisi',
-    stem: 'Aşağıdaki cümlelerden hangisi özne - yüklem ilişkisi açısından diğerlerinden farklıdır?',
-    options: [
-      { letter: 'A', text: 'Söylediklerimize bir tek o alındı.' },
-      { letter: 'B', text: 'Hülya bu sözlere çok kırıldı.' },
-      { letter: 'C', text: 'Radyoda eski bir şarkı çalındı.' },
-      { letter: 'D', text: 'Sebepsiz yere bize darıldı.' },
-    ],
-    correctAnswer: 'C',
-    explanation:
-      'A, B ve D seçeneklerindeki yüklemler (alındı, kırıldı, darıldı) dönüşlü çatılıdır; C seçeneğindeki "çalındı" fiili ise işi yapan belli olmadığı için edilgen çatılıdır.',
-  },
-  {
-    number: 18,
-    id: 'soru-18',
-    topicTag: 'Edilgen vs Dönüşlü Çatı',
-    stem: 'Aşağıdaki cümlelerin hangisinde edilgen çatılı bir fiil kullanılmamıştır?',
-    options: [
-      { letter: 'A', text: 'Katılımcılardan biri açık artırmadan çekildi.' },
-      { letter: 'B', text: 'Adaletli bir seçim için kura çekildi.' },
-      { letter: 'C', text: 'Dolma yapılacak etler çekildi.' },
-      { letter: 'D', text: 'Yol kenarına park eden araçlar çekildi.' },
-    ],
-    correctAnswer: 'A',
-    explanation:
-      'A seçeneğinde "Katılımcılardan biri" çekilme işini kendisi yapıp bu işten kendisi etkilendiği için fiil dönüşlüdür; B, C ve D seçeneklerinde "çekildi" edilgen çatılıdır.',
-  },
-  {
-    number: 19,
-    id: 'soru-19',
-    topicTag: 'Oldurgan Fiil',
-    stem: 'Aşağıdaki cümlelerin hangisinde geçişsiz bir fiil aldığı ek ile geçişli hale gelmiştir ?',
-    options: [
-      { letter: 'A', text: 'Bahçeyi işçilere sulattı.' },
-      { letter: 'B', text: 'Gereksiz konuşan adamı susturdu.' },
-      { letter: 'C', text: 'Çocuğu anaokuluna verdirdi.' },
-      { letter: 'D', text: 'Görevliye haddini bildirdi.' },
-    ],
-    correctAnswer: 'B',
-    explanation:
-      'B seçeneğinde geçişsiz olan "sus-" fiili -tur ekini alarak "adamı susturdu" biçiminde nesne alabilen (geçişli / oldurgan) bir fiile dönüşmüştür.',
-  },
-  {
-    number: 20,
-    id: 'soru-20',
-    topicTag: 'Ettirgen Fiil',
-    stem: 'Aşağıdaki cümlelerin hangisinde geçişli fiile gelen ek cümleye " başkasına yaptırma " anlamı katmıştır ?',
-    options: [
-      { letter: 'A', text: 'En çok da kırmızı gülleri seviyordu.' },
-      { letter: 'B', text: 'Babasını hiçbir zaman üzmüyordu.' },
-      { letter: 'C', text: 'Kapıyı tamirciye yaptırdılar.' },
-      { letter: 'D', text: 'Evi özenle bir gün boyu temizledi.' },
-    ],
-    correctAnswer: 'C',
-    explanation:
-      'C seçeneğinde geçişli olan "yap-" fiili -tır ekini alarak eylemi tamirciye, yani başkasına yaptırma (ettirgen) anlamı kazanmıştır.',
   },
 ];
 

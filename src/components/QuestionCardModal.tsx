@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Award, CheckCircle2, Clock, HelpCircle, Sparkles, XCircle } from 'lucide-react';
 import { CORRECT_ANSWER_BP, QUESTION_CARDS, QUESTION_TIME_LIMIT_SECONDS } from '../game/data';
+import { formatCountdown } from '../game/engine';
 import { OptionLetter, QuestionCard, Team } from '../game/types';
 
 interface QuestionCardModalProps {
@@ -75,7 +76,7 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
   };
 
   const timePct = Math.max(0, Math.min(100, (secondsLeft / QUESTION_TIME_LIMIT_SECONDS) * 100));
-  const isUrgent = !isAnswered && secondsLeft <= 5;
+  const isUrgent = !isAnswered && secondsLeft <= 10;
 
   return (
     <div
@@ -103,7 +104,7 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* 15-Second Live Countdown Badge */}
+            {/* 1-Minute Live Countdown Badge */}
             <div
               data-testid="question-timer-badge"
               className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 font-mono-num text-sm font-black shadow-sm transition-colors ${
@@ -115,7 +116,7 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
               }`}
             >
               <Clock className="h-4 w-4" />
-              <span>{secondsLeft} sn</span>
+              <span>{formatCountdown(secondsLeft)}</span>
             </div>
 
             <div className="hidden sm:flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-1.5 text-xs font-extrabold">
@@ -217,7 +218,7 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
                   {outcome.correct
                     ? `Tebrikler ${team.name}! Doğru Cevap (+${outcome.deltaBp} BP)`
                     : outcome.timedOut
-                      ? `Süre Doldu (${QUESTION_TIME_LIMIT_SECONDS} sn)! (${outcome.deltaBp} BP) · Doğru Seçenek: ${outcome.correctAnswer}`
+                      ? `Süre Doldu (1 dk)! (${outcome.deltaBp} BP) · Doğru Seçenek: ${outcome.correctAnswer}`
                       : `Yanlış Cevap (${outcome.deltaBp} BP) · Doğru Seçenek: ${outcome.correctAnswer}`}
                 </div>
                 <p className="text-sm font-semibold leading-relaxed opacity-95">
@@ -238,7 +239,7 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
                   : outcome.correct
                     ? 'İsterseniz sürpriz Bonus/İndirim/Ceza kartı çekebilir veya direkt geçebilirsiniz.'
                     : 'Yanlış veya süresi dolan sorularda bonus kartı verilmez.'
-                : `${QUESTION_TIME_LIMIT_SECONDS} saniye içinde doğru seçeneği işaretleyip onaylayınız (${secondsLeft} sn kaldı).`}
+                : `1 dakika (${QUESTION_TIME_LIMIT_SECONDS} sn) içinde doğru seçeneği işaretleyip onaylayınız (${formatCountdown(secondsLeft)} kaldı).`}
             </div>
 
             {!isAnswered ? (

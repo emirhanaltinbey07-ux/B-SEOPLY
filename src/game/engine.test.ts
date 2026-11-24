@@ -37,6 +37,7 @@ import {
   PROPERTY_ASSETS,
   QUESTION_CARDS,
   QUESTION_TIME_LIMIT_SECONDS,
+  QUESTIONS_PER_TEAM,
   TOTAL_GAME_SECONDS,
 } from './data';
 
@@ -62,14 +63,13 @@ test('24-tile track has exact composition: 1 start, 11 Istanbul locations (incl.
   ]);
 });
 
-test('all 20 Turkish Fiilde Çatı questions match exact official answer key 1..20, 20s timer, +50 BP reward, and vehicles removed', () => {
-  assert.equal(QUESTION_CARDS.length, 20);
-  assert.equal(QUESTION_TIME_LIMIT_SECONDS, 20);
+test('all 15 Turkish Fiilde Çatı questions match exact official answer key 1..15, 60s (1 min) timer, +50 BP reward, and vehicles removed', () => {
+  assert.equal(QUESTION_CARDS.length, 15);
+  assert.equal(QUESTIONS_PER_TEAM, 5);
+  assert.equal(QUESTION_TIME_LIMIT_SECONDS, 60);
   assert.equal(CORRECT_ANSWER_BP, 50);
-  const key = [
-    'D', 'A', 'C', 'C', 'D', 'D', 'A', 'D', 'B', 'A',
-    'A', 'D', 'C', 'B', 'A', 'D', 'C', 'A', 'B', 'C',
-  ];
+  const key = ['D', 'A', 'C', 'C', 'D', 'D', 'A', 'D', 'B', 'A', 'A', 'D', 'C', 'B', 'A'];
+  assert.equal(Object.keys(OFFICIAL_ANSWER_KEY).length, 15);
   QUESTION_CARDS.forEach((q, idx) => {
     assert.equal(q.number, idx + 1);
     assert.equal(q.correctAnswer, key[idx]);
@@ -214,21 +214,21 @@ test('correct answer gives +50 BP + optional Bonus/Ceza card (or direct skip); w
   assert.equal(state.activeChanceCardId, null);
 });
 
-test('all 20 questions can be played cleanly across 3 teams and victory ranking ranks strictly by Gayrimenkul count', () => {
+test('all 15 questions can be played cleanly across 3 teams (5 each) and victory ranking ranks strictly by Gayrimenkul count', () => {
   let state = createInitialGameState(undefined, true, false);
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 15; i++) {
     const qNum = state.questionDeckQueue[0];
     state = submitQuestionAnswer(state, qNum, OFFICIAL_ANSWER_KEY[qNum]);
     state = advanceToNextTeam(state);
   }
   assert.equal(state.questionDeckQueue.length, 0);
-  assert.equal(state.answeredQuestions.length, 20);
+  assert.equal(state.answeredQuestions.length, 15);
   assert.equal(areAllQuestionsCompleted(state), true);
   assert.equal(state.screen, 'gameover');
   assert.equal(state.timerPaused, true);
   assert.deepEqual(
     state.teams.map((t) => t.questionsAnswered),
-    [7, 7, 6]
+    [5, 5, 5]
   );
 
   const customTeams = state.teams.map((t, idx) => {
@@ -243,10 +243,10 @@ test('all 20 questions can be played cleanly across 3 teams and victory ranking 
   assert.equal(formatCountdown(TOTAL_GAME_SECONDS), '25:00');
 });
 
-test('game automatically transitions to gameover when the 20th question completes (wrong/timeout, property purchase/skip, or extra-roll card)', () => {
-  // Play first 19 questions cleanly
+test('game automatically transitions to gameover when the 15th question completes (wrong/timeout, property purchase/skip, or extra-roll card)', () => {
+  // Play first 14 questions cleanly
   let base = createInitialGameState(undefined, true, false);
-  for (let i = 0; i < 19; i++) {
+  for (let i = 0; i < 14; i++) {
     const qNum = base.questionDeckQueue[0];
     base = submitQuestionAnswer(base, qNum, OFFICIAL_ANSWER_KEY[qNum]);
     base = advanceToNextTeam(base);

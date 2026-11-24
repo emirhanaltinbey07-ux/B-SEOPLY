@@ -15,7 +15,7 @@ import {
   Trophy,
   X,
 } from 'lucide-react';
-import { CHARACTER_OPTIONS, JAIL_BAIL_BP, PROPERTY_ASSETS } from '../game/data';
+import { CHARACTER_OPTIONS, JAIL_BAIL_BP, PROPERTY_ASSETS, QUESTION_CARDS } from '../game/data';
 import { getRankedTeams } from '../game/engine';
 import { BoardTile, PeerLoan, SpecialEventToast, Team } from '../game/types';
 
@@ -303,7 +303,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
           <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1 text-xs font-extrabold uppercase tracking-widest">
             <Crown className="h-4 w-4 text-[#fff3b0]" />
             {allQuestionsCompleted
-              ? 'TÜM 20 SORU TAMAMLANDI · BİSEOPLY FİNAL SONUCU'
+              ? `TÜM ${QUESTION_CARDS.length} SORU TAMAMLANDI · BİSEOPLY FİNAL SONUCU`
               : 'BİSEOPLY FİNAL SONUCU'}
           </div>
           <h2
