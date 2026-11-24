@@ -31,6 +31,8 @@ import {
 import {
   advanceToNextTeam,
   applyActiveChanceCard,
+  areAllQuestionsCompleted,
+  completeQuestionWithoutBonus,
   createFairDiceRoller,
   createInitialGameState,
   drawPropertyCard,
@@ -106,7 +108,26 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [gameState.specialToast]);
 
-  // 15:00 Lesson Countdown Timer
+  const prevScreenRef = useRef<GameState['screen']>(gameState.screen);
+
+  // Trigger Victory Fanfare & 3D Champion Airplane Celebration whenever game enters 'gameover'
+  useEffect(() => {
+    if (prevScreenRef.current !== 'gameover' && gameState.screen === 'gameover') {
+      const champion = getRankedTeams(gameState.teams)[0];
+      setShowFinalReview(false);
+      setShowTeacherPanel(false);
+      setShowBankModal(false);
+      setShowInventoryModal(false);
+      soundEngine.playVictoryFanfare();
+      sceneRef.current?.triggerCelebrationFireworks(
+        champion?.name ?? 'ŞAMPİYON',
+        champion?.colorHex
+      );
+    }
+    prevScreenRef.current = gameState.screen;
+  }, [gameState.screen, gameState.teams]);
+
+  // 25:00 Lesson Countdown Timer
   useEffect(() => {
     if (gameState.screen !== 'playing' || gameState.timerPaused) return;
     const interval = window.setInterval(() => {
@@ -121,7 +142,7 @@ export default function App() {
     return () => window.clearInterval(interval);
   }, [gameState.screen, gameState.timerPaused]);
 
-  // Trigger Final Evaluation when 15:00 timer hits 00:00
+  // Trigger Final Evaluation when 25:00 timer hits 00:00
   useEffect(() => {
     if (gameState.screen === 'playing' && gameState.remainingSeconds === 0) {
       setShowFinalReview(true);
@@ -133,6 +154,7 @@ export default function App() {
     const cur = stateRef.current;
     const activeTeam = getActiveTeam(cur);
     if (cur.screen !== 'playing' || cur.turnPhase !== 'ready_to_roll') return;
+    if (areAllQuestionsCompleted(cur)) return;
     if (activeTeam.jailTurnsRemaining > 0) return;
 
     const diceValue = diceRollerRef.current.roll();
@@ -467,15 +489,8 @@ export default function App() {
       return;
     }
 
-    // Wrong answer or timeout: NO bonus card, finish turn cleanly!
-    setGameState((prev) => ({
-      ...prev,
-      activeQuestionNumber: null,
-      lastQuestionOutcome: null,
-      activeChanceCardId: null,
-      pendingPropertyDrawAfterBonus: false,
-      turnPhase: 'turn_complete',
-    }));
+    // Wrong answer or timeout: NO bonus card; ends game immediately if all questions are completed!
+    setGameState((prev) => completeQuestionWithoutBonus(prev));
   };
 
   const handleSkipBonusCard = () => {
@@ -523,14 +538,7 @@ export default function App() {
   };
 
   const handleAnnounceWinner = () => {
-    const champion = getRankedTeams(gameState.teams)[0];
-    setShowFinalReview(false);
-    setShowTeacherPanel(false);
-    setShowBankModal(false);
-    setShowInventoryModal(false);
-    soundEngine.playVictoryFanfare();
-    sceneRef.current?.triggerCelebrationFireworks(champion?.name ?? 'ŞAMPİYON', champion?.colorHex);
-    setGameState((prev) => ({ ...prev, screen: 'gameover' }));
+    setGameState((prev) => ({ ...prev, screen: 'gameover', timerPaused: true }));
   };
 
   const handleToggleMute = () => {
@@ -607,6 +615,7 @@ export default function App() {
           lastDiceValue={gameState.lastDiceValue}
           bannerMessage={gameState.bannerMessage}
           isFinalPhase={gameState.remainingSeconds <= FINAL_PHASE_THRESHOLD_SECONDS}
+          allQuestionsCompleted={areAllQuestionsCompleted(gameState)}
           onRollDice={handleRollDice}
           onDrawQuestionCard={handleDrawQuestionCard}
           onDrawPropertyCard={handleDrawPropertyCard}
@@ -680,6 +689,7 @@ export default function App() {
             onTimeout={handleTimeoutQuestion}
             onContinue={handleContinueAfterQuestion}
             onSkipBonusCard={handleSkipBonusCard}
+            isLastQuestion={areAllQuestionsCompleted(gameState)}
           />
         )}
 
@@ -836,6 +846,7 @@ export default function App() {
       {gameState.screen === 'gameover' && (
         <VictoryModal
           teams={gameState.teams}
+          allQuestionsCompleted={areAllQuestionsCompleted(gameState)}
           onRestart={() => {
             diceRollerRef.current.reset();
             sceneRef.current?.resetCelebration();

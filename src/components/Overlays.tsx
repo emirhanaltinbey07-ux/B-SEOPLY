@@ -275,12 +275,14 @@ export const PauseModal: React.FC<PauseModalProps> = ({ onResume, onReturnToSetu
 /* 5. Official Championship Victory Modal (Section 18 — Strict Real Estate Count Winner!) */
 interface VictoryModalProps {
   teams: Team[];
+  allQuestionsCompleted?: boolean;
   onRestart: () => void;
   onInspectBoard: () => void;
 }
 
 export const VictoryModal: React.FC<VictoryModalProps> = ({
   teams,
+  allQuestionsCompleted = false,
   onRestart,
   onInspectBoard,
 }) => {
@@ -300,7 +302,9 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
         <div className="bg-gradient-to-r from-[#b72818] via-[#d95b0c] to-[#d49a1a] px-6 py-6 text-white text-center space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1 text-xs font-extrabold uppercase tracking-widest">
             <Crown className="h-4 w-4 text-[#fff3b0]" />
-            BİSEOPLY FİNAL SONUCU
+            {allQuestionsCompleted
+              ? 'TÜM 20 SORU TAMAMLANDI · BİSEOPLY FİNAL SONUCU'
+              : 'BİSEOPLY FİNAL SONUCU'}
           </div>
           <h2
             id="victory-banner-title"

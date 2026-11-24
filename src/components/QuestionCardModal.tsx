@@ -20,6 +20,7 @@ interface QuestionCardModalProps {
   onTimeout: () => void;
   onContinue: () => void;
   onSkipBonusCard: () => void;
+  isLastQuestion?: boolean;
 }
 
 export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
@@ -31,6 +32,7 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
   onTimeout,
   onContinue,
   onSkipBonusCard,
+  isLastQuestion = false,
 }) => {
   const [selected, setSelected] = useState<OptionLetter | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number>(QUESTION_TIME_LIMIT_SECONDS);
@@ -229,9 +231,13 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#e5dac6]">
             <div className="text-xs font-bold text-[#526d85] max-w-sm">
               {isAnswered
-                ? outcome.correct
-                  ? 'İsterseniz sürpriz Bonus/İndirim/Ceza kartı çekebilir veya direkt geçebilirsiniz.'
-                  : 'Yanlış veya süresi dolan sorularda bonus kartı verilmez.'
+                ? isLastQuestion
+                  ? outcome.correct
+                    ? 'Son soruyu doğru bildiniz! Son Bonus/Emlak hakkınızı kullandıktan sonra oyun sona erecek.'
+                    : `Tüm ${QUESTION_CARDS.length} soru tamamlandı! Oyun sona eriyor ve şampiyon açıklanacak.`
+                  : outcome.correct
+                    ? 'İsterseniz sürpriz Bonus/İndirim/Ceza kartı çekebilir veya direkt geçebilirsiniz.'
+                    : 'Yanlış veya süresi dolan sorularda bonus kartı verilmez.'
                 : `${QUESTION_TIME_LIMIT_SECONDS} saniye içinde doğru seçeneği işaretleyip onaylayınız (${secondsLeft} sn kaldı).`}
             </div>
 
@@ -271,9 +277,13 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
               <button
                 type="button"
                 onClick={onContinue}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#0c6b9a] hover:bg-[#095378] px-6 py-3 text-base font-extrabold text-white shadow-md cursor-pointer"
+                className={`inline-flex items-center gap-2 rounded-xl px-6 py-3 text-base font-extrabold text-white shadow-md cursor-pointer ${
+                  isLastQuestion
+                    ? 'bg-[#d49a1a] hover:bg-[#b58110]'
+                    : 'bg-[#0c6b9a] hover:bg-[#095378]'
+                }`}
               >
-                Devam Et
+                {isLastQuestion ? 'Oyunu Bitir ve Şampiyonu Gör' : 'Devam Et'}
                 <ArrowRight className="h-4 w-4" />
               </button>
             )}

@@ -212,6 +212,33 @@ export function getQuestionByNumber(questionNumber: number): QuestionCard | unde
   return QUESTION_CARDS.find((q) => q.number === questionNumber);
 }
 
+export function areAllQuestionsCompleted(state: GameState): boolean {
+  return (
+    state.questionDeckQueue.length === 0 ||
+    state.answeredQuestions.length >= QUESTION_CARDS.length
+  );
+}
+
+/**
+ * Transitions the game cleanly into 'gameover' once all questions are completed
+ * and the final question's turn actions have wrapped up.
+ */
+export function finishGameOnAllQuestionsCompleted(state: GameState): GameState {
+  const champion = getRankedTeams(state.teams)[0];
+  return {
+    ...state,
+    screen: 'gameover',
+    turnPhase: 'turn_complete',
+    timerPaused: true,
+    activeQuestionNumber: null,
+    activePropertyAssetId: null,
+    activeChanceCardId: null,
+    pendingPropertyDrawAfterBonus: false,
+    lastQuestionOutcome: null,
+    bannerMessage: `Tüm ${QUESTION_CARDS.length} soru tamamlandı! Oyun sona erdi — Şampiyon: ${champion?.name ?? 'Şampiyon'}!`,
+  };
+}
+
 /**
  * Count ONLY Real Estate ('emlak' = gayrimenkul) owned by a team!
  * Vehicles ('arac') are STRICTLY EXCLUDED per Section 18.
@@ -277,6 +304,10 @@ export function resolveDiceRoll(
   diceValue: number,
   chanceIndexSeed?: number
 ): GameState {
+  if (areAllQuestionsCompleted(state)) {
+    return finishGameOnAllQuestionsCompleted(state);
+  }
+
   const clampedDice = Math.max(1, Math.min(6, Math.round(diceValue)));
   const team = getActiveTeam(state);
 
@@ -633,8 +664,27 @@ export function timeoutQuestion(state: GameState, questionNumber: number): GameS
 }
 
 /**
+ * Complete question modal when no bonus card is queued (wrong answer or timeout).
+ * If all questions have been completed, immediately ends the game and announces the winner.
+ */
+export function completeQuestionWithoutBonus(state: GameState): GameState {
+  const cleared: GameState = {
+    ...state,
+    activeQuestionNumber: null,
+    lastQuestionOutcome: null,
+    activeChanceCardId: null,
+    pendingPropertyDrawAfterBonus: false,
+    turnPhase: 'turn_complete',
+  };
+  if (areAllQuestionsCompleted(cleared)) {
+    return finishGameOnAllQuestionsCompleted(cleared);
+  }
+  return cleared;
+}
+
+/**
  * Optional "Direkt Geç" after a correct question answer:
- * Skips drawing the Bonus/İndirim/Ceza card and moves directly to Emlak Kartı (or turn_complete).
+ * Skips drawing the Bonus/İndirim/Ceza card and moves directly to Emlak Kartı (or ends game / turn_complete).
  */
 export function skipBonusCardAfterQuestion(state: GameState): GameState {
   const team = getActiveTeam(state);
@@ -643,8 +693,9 @@ export function skipBonusCardAfterQuestion(state: GameState): GameState {
     state.pendingPropertyDrawAfterBonus && availableAssets.length > 0
       ? 'ready_to_draw_property'
       : 'turn_complete';
+  const allDone = areAllQuestionsCompleted(state);
 
-  return {
+  const nextState: GameState = {
     ...state,
     activeQuestionNumber: null,
     lastQuestionOutcome: null,
@@ -653,20 +704,31 @@ export function skipBonusCardAfterQuestion(state: GameState): GameState {
     turnPhase: nextPhase,
     bannerMessage:
       nextPhase === 'ready_to_draw_property'
-        ? `${team.name} bonus/indirim kartını pas geçti. İsterseniz EMLAK KARTI çekebilir veya sırayı geçebilirsiniz.`
+        ? allDone
+          ? `${team.name} son soruyu doğru bildi! İsterseniz son EMLAK KARTI hakkınızı kullanabilir veya oyunu bitirebilirsiniz.`
+          : `${team.name} bonus/indirim kartını pas geçti. İsterseniz EMLAK KARTI çekebilir veya sırayı geçebilirsiniz.`
         : `${team.name} bonus/indirim kartını pas geçti. Sırayı sonraki takıma geçirebilirsiniz.`,
   };
+
+  if (nextPhase === 'turn_complete' && allDone) {
+    return finishGameOnAllQuestionsCompleted(nextState);
+  }
+
+  return nextState;
 }
 
 export function drawPropertyCard(state: GameState, seed?: number): GameState {
   const available = getAvailablePropertyAssets(state);
   if (available.length === 0) {
-    return {
+    const emptyState: GameState = {
       ...state,
       turnPhase: 'turn_complete',
       activePropertyAssetId: null,
-      bannerMessage: 'İstanbul piyasasındaki tüm gayrimenkul ve araçlar satın alındı!',
+      bannerMessage: 'İstanbul piyasasındaki tüm gayrimenkuller satın alındı!',
     };
+    return areAllQuestionsCompleted(emptyState)
+      ? finishGameOnAllQuestionsCompleted(emptyState)
+      : emptyState;
   }
   const idx =
     typeof seed === 'number'
@@ -716,7 +778,7 @@ export function purchaseActiveProperty(state: GameState): GameState {
       : t
   );
 
-  return {
+  const nextState: GameState = {
     ...state,
     teams: updatedTeams,
     activePropertyAssetId: null,
@@ -733,16 +795,25 @@ export function purchaseActiveProperty(state: GameState): GameState {
     ),
     bannerMessage: `${team.name}, ${asset.name} varlığını ${price} BP ile satın aldı!`,
   };
+
+  if (areAllQuestionsCompleted(nextState)) {
+    return finishGameOnAllQuestionsCompleted(nextState);
+  }
+  return nextState;
 }
 
 export function skipActiveProperty(state: GameState): GameState {
   const team = getActiveTeam(state);
-  return {
+  const nextState: GameState = {
     ...state,
     activePropertyAssetId: null,
     turnPhase: 'turn_complete',
     bannerMessage: `${team.name} satın alma hakkını pas geçti.`,
   };
+  if (areAllQuestionsCompleted(nextState)) {
+    return finishGameOnAllQuestionsCompleted(nextState);
+  }
+  return nextState;
 }
 
 export function applyActiveChanceCard(state: GameState): GameState {
@@ -751,6 +822,7 @@ export function applyActiveChanceCard(state: GameState): GameState {
   if (!card) return state;
 
   const team = getActiveTeam(state);
+  const allDone = areAllQuestionsCompleted(state);
   let updatedTeams = [...state.teams];
   const availableAssets = getAvailablePropertyAssets(state);
   let nextPhase: GameState['turnPhase'] =
@@ -761,13 +833,17 @@ export function applyActiveChanceCard(state: GameState): GameState {
 
   switch (card.effectType) {
     case 'extra_roll': {
-      updatedTeams = state.teams.map((t, idx) =>
-        idx === state.activeTeamIndex ? { ...t, extraRollPending: true } : t
-      );
-      if (nextPhase !== 'ready_to_draw_property') {
-        nextPhase = 'ready_to_roll';
+      if (!allDone) {
+        updatedTeams = state.teams.map((t, idx) =>
+          idx === state.activeTeamIndex ? { ...t, extraRollPending: true } : t
+        );
+        if (nextPhase !== 'ready_to_draw_property') {
+          nextPhase = 'ready_to_roll';
+        }
       }
-      msg = `Vapur Seferi! ${team.name} ekstra zar hakkı kazandı!`;
+      msg = allDone
+        ? `Vapur Seferi! Tüm sorular tamamlandığı için oyun sona eriyor.`
+        : `Vapur Seferi! ${team.name} ekstra zar hakkı kazandı!`;
       break;
     }
     case 'skip_turn': {
@@ -815,7 +891,7 @@ export function applyActiveChanceCard(state: GameState): GameState {
     }
   }
 
-  return {
+  const nextState: GameState = {
     ...state,
     teams: updatedTeams,
     activeChanceCardId: null,
@@ -824,9 +900,17 @@ export function applyActiveChanceCard(state: GameState): GameState {
     financeLog: pushFinanceLog(state, `${team.name} — ${msg}`),
     bannerMessage:
       nextPhase === 'ready_to_draw_property'
-        ? `${msg} Şimdi EMLAK KARTLARI destesinden tapu kartı çekebilirsiniz!`
+        ? allDone
+          ? `${msg} Son EMLAK KARTI hakkınızı kullanabilir veya oyunu bitirebilirsiniz!`
+          : `${msg} Şimdi EMLAK KARTLARI destesinden tapu kartı çekebilirsiniz!`
         : msg,
   };
+
+  if (nextPhase === 'turn_complete' && allDone) {
+    return finishGameOnAllQuestionsCompleted(nextState);
+  }
+
+  return nextState;
 }
 
 // ============================================================
@@ -1076,6 +1160,10 @@ export function tradeAssetBetweenTeams(
  * - They DO NOT roll and DO NOT solve a question on this skipped turn ('turn_complete').
  */
 export function advanceToNextTeam(state: GameState): GameState {
+  if (areAllQuestionsCompleted(state)) {
+    return finishGameOnAllQuestionsCompleted(state);
+  }
+
   const nextIdx = (state.activeTeamIndex + 1) % state.teams.length;
   const incoming = state.teams[nextIdx];
 

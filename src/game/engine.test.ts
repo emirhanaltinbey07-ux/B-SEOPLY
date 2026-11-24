@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 import {
   advanceToNextTeam,
   applyActiveChanceCard,
+  areAllQuestionsCompleted,
+  completeQuestionWithoutBonus,
   createFairDiceRoller,
   createInitialGameState,
+  drawPropertyCard,
   executePeerLoan,
   formatCountdown,
   getRankedTeams,
@@ -15,6 +18,7 @@ import {
   resolveDiceRoll,
   resolveJailDecision,
   sellAssetToBank,
+  skipActiveProperty,
   skipBonusCardAfterQuestion,
   submitQuestionAnswer,
   takeBankLoan,
@@ -219,6 +223,9 @@ test('all 20 questions can be played cleanly across 3 teams and victory ranking 
   }
   assert.equal(state.questionDeckQueue.length, 0);
   assert.equal(state.answeredQuestions.length, 20);
+  assert.equal(areAllQuestionsCompleted(state), true);
+  assert.equal(state.screen, 'gameover');
+  assert.equal(state.timerPaused, true);
   assert.deepEqual(
     state.teams.map((t) => t.questionsAnswered),
     [7, 7, 6]
@@ -234,6 +241,63 @@ test('all 20 questions can be played cleanly across 3 teams and victory ranking 
   assert.equal(ranked[0].id, 2);
   assert.equal(TOTAL_GAME_SECONDS, 25 * 60);
   assert.equal(formatCountdown(TOTAL_GAME_SECONDS), '25:00');
+});
+
+test('game automatically transitions to gameover when the 20th question completes (wrong/timeout, property purchase/skip, or extra-roll card)', () => {
+  // Play first 19 questions cleanly
+  let base = createInitialGameState(undefined, true, false);
+  for (let i = 0; i < 19; i++) {
+    const qNum = base.questionDeckQueue[0];
+    base = submitQuestionAnswer(base, qNum, OFFICIAL_ANSWER_KEY[qNum]);
+    base = advanceToNextTeam(base);
+  }
+  assert.equal(base.questionDeckQueue.length, 1);
+  assert.equal(base.screen, 'playing');
+  const lastQ = base.questionDeckQueue[0];
+
+  // Branch A: 20th question answered wrong -> completeQuestionWithoutBonus ends game immediately
+  const wrongLetter = OFFICIAL_ANSWER_KEY[lastQ] === 'A' ? 'B' : 'A';
+  let wrongEnd = submitQuestionAnswer(base, lastQ, wrongLetter);
+  assert.equal(areAllQuestionsCompleted(wrongEnd), true);
+  wrongEnd = completeQuestionWithoutBonus(wrongEnd);
+  assert.equal(wrongEnd.screen, 'gameover');
+  assert.equal(wrongEnd.timerPaused, true);
+
+  // Branch B: 20th question times out -> completeQuestionWithoutBonus ends game immediately
+  let timeoutEnd = timeoutQuestion(base, lastQ);
+  timeoutEnd = completeQuestionWithoutBonus(timeoutEnd);
+  assert.equal(timeoutEnd.screen, 'gameover');
+
+  // Branch C: 20th question answered correctly -> skip bonus -> buy final property -> gameover!
+  let correctBuyEnd = submitQuestionAnswer(base, lastQ, OFFICIAL_ANSWER_KEY[lastQ]);
+  correctBuyEnd = skipBonusCardAfterQuestion(correctBuyEnd);
+  assert.equal(correctBuyEnd.turnPhase, 'ready_to_draw_property');
+  assert.equal(correctBuyEnd.screen, 'playing');
+  correctBuyEnd = drawPropertyCard(correctBuyEnd, 0);
+  correctBuyEnd = purchaseActiveProperty(correctBuyEnd);
+  assert.equal(correctBuyEnd.screen, 'gameover');
+  assert.equal(correctBuyEnd.timerPaused, true);
+
+  // Branch D: 20th question answered correctly -> skip bonus -> draw & skip property -> gameover!
+  let correctSkipEnd = submitQuestionAnswer(base, lastQ, OFFICIAL_ANSWER_KEY[lastQ]);
+  correctSkipEnd = skipBonusCardAfterQuestion(correctSkipEnd);
+  correctSkipEnd = drawPropertyCard(correctSkipEnd, 0);
+  correctSkipEnd = skipActiveProperty(correctSkipEnd);
+  assert.equal(correctSkipEnd.screen, 'gameover');
+
+  // Branch E: Extra-roll chance card after 20th question does NOT reopen dice rolling
+  const extraRollCard = CHANCE_CARDS.find((c) => c.effectType === 'extra_roll')!;
+  let extraRollEnd = submitQuestionAnswer(base, lastQ, OFFICIAL_ANSWER_KEY[lastQ]);
+  extraRollEnd = applyActiveChanceCard({
+    ...extraRollEnd,
+    activeChanceCardId: extraRollCard.id,
+    pendingPropertyDrawAfterBonus: false,
+  });
+  assert.equal(extraRollEnd.screen, 'gameover');
+
+  // Guard: resolveDiceRoll refuses to continue after all 20 questions are completed
+  const blockedRoll = resolveDiceRoll({ ...wrongEnd, screen: 'playing', turnPhase: 'ready_to_roll' }, 4);
+  assert.equal(blockedRoll.screen, 'gameover');
 });
 
 test('team characters are Etken, Edilgen, and Dönüşlü with exact requested traits and defaults', () => {

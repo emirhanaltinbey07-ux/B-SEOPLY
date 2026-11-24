@@ -8,6 +8,7 @@ import {
   HelpCircle,
   Landmark,
   SlidersHorizontal,
+  Trophy,
 } from 'lucide-react';
 import { Team, TurnPhase } from '../game/types';
 
@@ -17,6 +18,7 @@ interface BottomDockProps {
   lastDiceValue: number | null;
   bannerMessage: string;
   isFinalPhase: boolean;
+  allQuestionsCompleted?: boolean;
   onRollDice: () => void;
   onDrawQuestionCard: () => void;
   onDrawPropertyCard: () => void;
@@ -33,6 +35,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
   lastDiceValue,
   bannerMessage,
   isFinalPhase,
+  allQuestionsCompleted = false,
   onRollDice,
   onDrawQuestionCard,
   onDrawPropertyCard,
@@ -51,10 +54,11 @@ export const BottomDock: React.FC<BottomDockProps> = ({
     turnPhase === 'drawing_property_card' ||
     turnPhase === 'drawing_chance_card';
 
-  const canRoll = turnPhase === 'ready_to_roll' && activeTeam.jailTurnsRemaining === 0;
-  const canDrawQuestion = turnPhase === 'ready_to_draw_question';
+  const canRoll = !allQuestionsCompleted && turnPhase === 'ready_to_roll' && activeTeam.jailTurnsRemaining === 0;
+  const canDrawQuestion = !allQuestionsCompleted && turnPhase === 'ready_to_draw_question';
   const canDrawProperty = turnPhase === 'ready_to_draw_property';
   const canPassTurn =
+    allQuestionsCompleted ||
     turnPhase === 'turn_complete' ||
     turnPhase === 'ready_to_draw_property' ||
     (turnPhase === 'ready_to_draw_question' && activeTeam.jailTurnsRemaining === 0 && lastDiceValue === null);
@@ -135,12 +139,23 @@ export const BottomDock: React.FC<BottomDockProps> = ({
           disabled={!canPassTurn || isBusy}
           className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-xs md:text-sm font-extrabold shadow-sm transition-all whitespace-nowrap cursor-pointer ${
             canPassTurn && !isBusy
-              ? 'bg-[#0c6b9a] hover:bg-[#095378] text-white'
+              ? allQuestionsCompleted
+                ? 'bg-[#d49a1a] hover:bg-[#b58110] text-white ring-2 ring-[#f4cf6a]'
+                : 'bg-[#0c6b9a] hover:bg-[#095378] text-white'
               : 'bg-[#e6dfd2] text-[#83919e] cursor-not-allowed'
           }`}
         >
-          Sonraki Takım
-          <ArrowRight className="h-4 w-4 shrink-0" />
+          {allQuestionsCompleted ? (
+            <>
+              <Trophy className="h-4 w-4 shrink-0" />
+              {turnPhase === 'ready_to_draw_property' ? 'Oyunu Bitir' : 'Şampiyonu Gör'}
+            </>
+          ) : (
+            <>
+              Sonraki Takım
+              <ArrowRight className="h-4 w-4 shrink-0" />
+            </>
+          )}
         </button>
 
         <div className="hidden lg:block h-7 w-px bg-[#dfd3be] mx-0.5" aria-hidden="true" />
