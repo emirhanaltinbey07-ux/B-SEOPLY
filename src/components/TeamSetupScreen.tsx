@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Compass, Play, Users } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronDown, ChevronUp, Compass, Play, Users } from 'lucide-react';
 import { CHARACTER_OPTIONS, DEFAULT_TEAMS_SETUP, PAWN_COLORS } from '../game/data';
 import { TeamSetupInput } from '../game/engine';
 import { CharacterAvatarId } from '../game/types';
@@ -95,6 +95,37 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({ onStartGame })
     DEFAULT_TEAMS_SETUP.map((t) => ({ ...t }))
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const [scrollInfo, setScrollInfo] = useState({ canScrollUp: false, canScrollDown: false });
+
+  const updateScrollInfo = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const canScrollUp = el.scrollTop > 12;
+    const canScrollDown = el.scrollTop + el.clientHeight < el.scrollHeight - 12;
+    setScrollInfo((prev) =>
+      prev.canScrollUp === canScrollUp && prev.canScrollDown === canScrollDown
+        ? prev
+        : { canScrollUp, canScrollDown }
+    );
+  }, []);
+
+  useEffect(() => {
+    updateScrollInfo();
+    const raf = window.requestAnimationFrame(updateScrollInfo);
+    window.addEventListener('resize', updateScrollInfo);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener('resize', updateScrollInfo);
+    };
+  }, [updateScrollInfo, errorMsg]);
+
+  const scrollByStep = (direction: 'up' | 'down') => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const step = Math.max(240, Math.round(el.clientHeight * 0.55));
+    el.scrollBy({ top: direction === 'down' ? step : -step, behavior: 'smooth' });
+  };
 
   const handleNameChange = (idx: number, value: string) => {
     setErrorMsg(null);
@@ -125,52 +156,68 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({ onStartGame })
     onStartGame(teams);
   };
 
+  const isScrollable = scrollInfo.canScrollUp || scrollInfo.canScrollDown;
+
   return (
-    <div className="fixed inset-0 z-20 flex flex-col justify-between p-4 md:p-6 pointer-events-none">
-      {/* Top Title Hero floating over the live sunlit 3D Istanbul Diorama */}
-      <header className="mx-auto text-center max-w-2xl pointer-events-auto">
-        <div
-          className="inline-flex items-center gap-2 rounded-xl border-2 border-[#e23b26] px-4 py-1 text-xs font-extrabold uppercase tracking-[0.18em] text-[#b72818] shadow-md mb-2"
-          style={{ backgroundColor: 'rgba(255, 250, 242, 0.95)' }}
-        >
-          <Compass className="h-3.5 w-3.5 text-[#e23b26]" />
-          8. Sınıf Türkçe · Fiilde Çatı · 3D İstanbul Masa Oyunu
-        </div>
-        <h1
-          className="font-display text-4xl md:text-6xl font-black tracking-tight text-white"
-          style={{
-            textShadow: '0 4px 18px rgba(15, 41, 66, 0.62), 0 1px 2px rgba(15, 41, 66, 0.85)',
-          }}
-        >
-          BİSEOPLY
-        </h1>
-        <p
-          className="mt-1 font-display text-lg md:text-2xl font-bold text-[#fff5d6]"
-          style={{ textShadow: '0 2px 10px rgba(15, 41, 66, 0.72)' }}
-        >
-          İstanbul Senin, Oyun Senin
-        </p>
-      </header>
-
-      {/* Bottom Compact 3-Team Setup Panel leaving the 3D Istanbul city clearly visible */}
-      <form
-        onSubmit={handleSubmit}
-        className="mx-auto w-full max-w-5xl rounded-2xl border-2 border-[#d4c3a3] p-4 md:p-5 shadow-2xl pointer-events-auto"
-        style={{ backgroundColor: 'rgba(252, 249, 242, 0.95)' }}
+    <div
+      ref={scrollContainerRef}
+      onScroll={updateScrollInfo}
+      data-testid="setup-scroll-container"
+      className={`fixed inset-0 z-20 overflow-y-auto overscroll-contain touch-pan-y mobile-scroll ${
+        isScrollable ? 'pointer-events-auto' : 'pointer-events-auto md:pointer-events-none'
+      }`}
+    >
+      <div
+        className={`min-h-full flex flex-col justify-between gap-4 sm:gap-5 px-3 pt-4 sm:p-5 md:p-6 ${
+          isScrollable
+            ? 'pb-[max(5.25rem,calc(4.5rem+env(safe-area-inset-bottom)))]'
+            : 'pb-[max(2rem,env(safe-area-inset-bottom))]'
+        }`}
       >
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-[#0c6b9a]" />
-            <h2 className="font-display text-lg md:text-xl font-bold text-[#0f2942]">
-              Üç Takımı ve 3D Öğrenci Karakterlerini Hazırla
-            </h2>
+        {/* Top Title Hero floating over the live sunlit 3D Istanbul Diorama */}
+        <header className="mx-auto text-center max-w-2xl pointer-events-auto pt-[env(safe-area-inset-top)]">
+          <div
+            className="inline-flex items-center gap-1.5 sm:gap-2 rounded-xl border-2 border-[#e23b26] px-3 sm:px-4 py-1 text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.12em] sm:tracking-[0.18em] text-[#b72818] shadow-md mb-2"
+            style={{ backgroundColor: 'rgba(255, 250, 242, 0.95)' }}
+          >
+            <Compass className="h-3.5 w-3.5 shrink-0 text-[#e23b26]" />
+            8. Sınıf Türkçe · Fiilde Çatı · 3D İstanbul Masa Oyunu
           </div>
-          <div className="text-xs font-bold text-[#35556e] bg-[#eef5fa] border border-[#cde0ed] rounded-lg px-3 py-1">
-            Başlangıç: 100 BP · 20 Türkçe Sorusu (20 sn) · 25 Dakika · En Çok Gayrimenkul Kazanır
-          </div>
-        </div>
+          <h1
+            className="font-display text-3xl sm:text-4xl md:text-6xl font-black tracking-tight text-white"
+            style={{
+              textShadow: '0 4px 18px rgba(15, 41, 66, 0.62), 0 1px 2px rgba(15, 41, 66, 0.85)',
+            }}
+          >
+            BİSEOPLY
+          </h1>
+          <p
+            className="mt-1 font-display text-base sm:text-lg md:text-2xl font-bold text-[#fff5d6]"
+            style={{ textShadow: '0 2px 10px rgba(15, 41, 66, 0.72)' }}
+          >
+            İstanbul Senin, Oyun Senin
+          </p>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+        {/* Bottom 3-Team Setup Panel (fully scrollable vertically on phones & compact screens) */}
+        <form
+          onSubmit={handleSubmit}
+          className="mx-auto w-full max-w-5xl rounded-2xl border-2 border-[#d4c3a3] p-3.5 sm:p-4 md:p-5 shadow-2xl pointer-events-auto"
+          style={{ backgroundColor: 'rgba(252, 249, 242, 0.96)' }}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 shrink-0 text-[#0c6b9a]" />
+              <h2 className="font-display text-base sm:text-lg md:text-xl font-bold text-[#0f2942]">
+                Üç Takımı ve 3D Öğrenci Karakterlerini Hazırla
+              </h2>
+            </div>
+            <div className="text-[11px] sm:text-xs font-bold text-[#35556e] bg-[#eef5fa] border border-[#cde0ed] rounded-lg px-2.5 sm:px-3 py-1">
+              Başlangıç: 100 BP · 20 Türkçe Sorusu (20 sn) · 25 Dakika · En Çok Gayrimenkul Kazanır
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-3.5">
           {teams.map((team, idx) => {
             const activeColor =
               PAWN_COLORS.find((c) => c.id === team.colorId) ?? PAWN_COLORS[idx];
@@ -252,7 +299,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({ onStartGame })
                           aria-label={`${idx + 1}. Takım için ${color.name}`}
                           onClick={() => handleColorSelect(idx, color.id)}
                           disabled={usedByOther}
-                          className={`h-7 w-7 rounded-full border-2 transition-transform cursor-pointer ${
+                          className={`h-8 w-8 sm:h-7 sm:w-7 rounded-full border-2 transition-transform cursor-pointer ${
                             isSelected
                               ? 'scale-110 ring-2 ring-offset-1 ring-[#0f2942] border-white'
                               : usedByOther
@@ -279,19 +326,58 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({ onStartGame })
           </div>
         )}
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="text-xs font-semibold text-[#476075]">
-            İpucu: 3D tahtayı sürükleyerek döndürebilir, Taksim, Galata ve BANKA binasına tıklayabilirsiniz.
+            İpucu: 3D tahtayı parmağınızla veya fareyle döndürebilir, Taksim, Galata ve BANKA binasına tıklayabilirsiniz.
           </div>
           <button
             type="submit"
-            className="inline-flex items-center gap-2.5 rounded-xl bg-[#e23b26] hover:bg-[#c32d1b] text-white font-extrabold px-7 py-3 text-base shadow-lg transition-transform active:scale-95 cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#e23b26] hover:bg-[#c32d1b] text-white font-extrabold px-7 py-3.5 sm:py-3 text-base shadow-lg transition-transform active:scale-95 cursor-pointer"
           >
             <Play className="h-5 w-5 fill-current" />
             İstanbul Turuna Başla
           </button>
         </div>
-      </form>
+        </form>
+      </div>
+
+      {/* Clean non-overlapping Yukarı / Aşağı Scroll Bar whenever setup content overflows (phones & compact screens) */}
+      {isScrollable && (
+        <div
+          data-testid="setup-scroll-controls"
+          className="fixed bottom-[max(0.65rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-full border-2 border-[#d4c3a3] px-2.5 py-1.5 shadow-2xl pointer-events-auto"
+          style={{ backgroundColor: 'rgba(252, 249, 242, 0.97)' }}
+        >
+          <button
+            type="button"
+            onClick={() => scrollByStep('up')}
+            disabled={!scrollInfo.canScrollUp}
+            aria-label="Yukarı kaydır"
+            className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-extrabold transition-all cursor-pointer ${
+              scrollInfo.canScrollUp
+                ? 'bg-[#0f2942] hover:bg-[#193d5e] text-white shadow-sm active:scale-95'
+                : 'bg-[#e6dfd2] text-[#83919e] cursor-not-allowed'
+            }`}
+          >
+            <ChevronUp className="h-4 w-4 shrink-0" />
+            Yukarı
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollByStep('down')}
+            disabled={!scrollInfo.canScrollDown}
+            aria-label="Aşağı kaydır"
+            className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-extrabold transition-all cursor-pointer ${
+              scrollInfo.canScrollDown
+                ? 'bg-[#e23b26] hover:bg-[#c32d1b] text-white shadow-sm active:scale-95'
+                : 'bg-[#e6dfd2] text-[#83919e] cursor-not-allowed'
+            }`}
+          >
+            Aşağı
+            <ChevronDown className="h-4 w-4 shrink-0" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

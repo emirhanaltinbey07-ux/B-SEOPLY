@@ -39,14 +39,14 @@ export const ChanceCardModal: React.FC<ChanceCardModalProps> = ({
   return (
     <div
       data-testid="bonus-discount-modal"
-      className="fixed inset-0 z-30 flex items-center justify-center p-4"
+      className="fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-4"
       style={{ backgroundColor: 'rgba(12, 30, 48, 0.56)' }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="chance-card-title"
     >
       <div
-        className={`w-full max-w-md rounded-2xl border-4 bg-[#fcf9f2] shadow-2xl overflow-hidden ${borderClass}`}
+        className={`w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain mobile-scroll rounded-2xl border-4 bg-[#fcf9f2] shadow-2xl ${borderClass}`}
       >
         <div className={`px-6 py-4 text-white flex items-center gap-3 ${headerBgClass}`}>
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 shrink-0">

@@ -579,7 +579,7 @@ export default function App() {
   };
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden select-none">
+    <main className="relative w-full h-[100dvh] overflow-hidden select-none">
       {/* Live Full-Viewport 3D Istanbul Diorama WebGL Canvas */}
       <div
         ref={canvasMountRef}

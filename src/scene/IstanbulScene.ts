@@ -176,14 +176,16 @@ export class IstanbulSceneController {
     this.scene.environmentIntensity = 0.36;
     pmrem.dispose();
 
-    this.camera = new THREE.PerspectiveCamera(42, width / height, 0.4, 480);
-    this.camera.position.set(-23.0, 27.5, 30.5);
+    const initialAspect = width / height;
+    this.camera = new THREE.PerspectiveCamera(this.computeBaseFov(initialAspect), initialAspect, 0.4, 480);
+    const overviewDistScale = this.computeOverviewScale(initialAspect);
+    this.camera.position.set(-23.0 * overviewDistScale, 27.5 * overviewDistScale, 30.5 * overviewDistScale);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = !this.isSoftwareGl;
     this.controls.dampingFactor = 0.06;
     this.controls.minDistance = 12;
-    this.controls.maxDistance = 62;
+    this.controls.maxDistance = 86;
     this.controls.maxPolarAngle = Math.PI * 0.44;
     this.controls.minPolarAngle = 0.28;
     this.controls.target.set(0, -0.2, 1.8);
@@ -238,11 +240,31 @@ export class IstanbulSceneController {
     e.preventDefault();
   };
 
+  private computeBaseFov(aspect: number): number {
+    if (aspect < 0.85) {
+      // Portrait phone/tablet: widen vertical FOV smoothly so all 4 sides of the 3D board stay in frame
+      const t = Math.min(1, Math.max(0, (0.85 - aspect) / 0.45));
+      return 42 + t * 14;
+    }
+    return 42;
+  }
+
+  private computeOverviewScale(aspect: number): number {
+    if (aspect < 0.85) {
+      const t = Math.min(1, Math.max(0, (0.85 - aspect) / 0.45));
+      return 1 + t * 0.34;
+    }
+    return 1;
+  }
+
   private handleResize() {
     if (this.disposed) return;
     const width = Math.max(this.container.clientWidth, 320);
     const height = Math.max(this.container.clientHeight, 240);
     this.camera.aspect = width / height;
+    if (!this.runAnim?.active) {
+      this.camera.fov = this.computeBaseFov(this.camera.aspect);
+    }
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
   }
@@ -311,7 +333,8 @@ export class IstanbulSceneController {
   }
 
   public focusOverview() {
-    this.desiredCamPos.set(-23.0, 27.5, 30.5);
+    const scale = this.computeOverviewScale(this.camera.aspect);
+    this.desiredCamPos.set(-23.0 * scale, 27.5 * scale, 30.5 * scale);
     this.desiredLookAt.set(0, -0.2, 1.8);
     this.cameraTransitionActive = true;
   }
@@ -593,7 +616,7 @@ export class IstanbulSceneController {
     flagPos.needsUpdate = true;
 
     // 2. Camera framing (Title orbit, active FPS walk, OR damped tabletop overview/landmark focus)
-    const targetFov = this.runAnim?.active ? 58 : 42;
+    const targetFov = this.runAnim?.active ? 58 : this.computeBaseFov(this.camera.aspect);
     if (Math.abs(this.camera.fov - targetFov) > 0.05) {
       this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFov, 1 - Math.exp(-7 * dt));
       this.camera.updateProjectionMatrix();
@@ -601,10 +624,11 @@ export class IstanbulSceneController {
 
     if (this.titleOrbitMode) {
       const a = -0.58 + Math.sin(this.elapsedTotal * 0.16) * 0.42;
+      const scale = this.computeOverviewScale(this.camera.aspect);
       this.camera.position.set(
-        Math.sin(a) * 35,
-        24.0 + Math.sin(this.elapsedTotal * 0.25) * 1.2,
-        Math.cos(a) * 35
+        Math.sin(a) * 35 * scale,
+        (24.0 + Math.sin(this.elapsedTotal * 0.25) * 1.2) * scale,
+        Math.cos(a) * 35 * scale
       );
       this.camera.lookAt(0, 1.2, 2.5);
     } else if (!this.runAnim?.active) {

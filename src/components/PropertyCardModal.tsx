@@ -26,13 +26,13 @@ export const PropertyCardModal: React.FC<PropertyCardModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-30 flex items-center justify-center p-4"
+      className="fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-4"
       style={{ backgroundColor: 'rgba(12, 30, 48, 0.58)' }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="property-card-title"
     >
-      <div className="w-full max-w-lg rounded-2xl border-4 border-[#149a7c] bg-[#fcf9f2] shadow-2xl overflow-hidden">
+      <div className="w-full max-w-lg max-h-[90dvh] overflow-y-auto overscroll-contain mobile-scroll rounded-2xl border-4 border-[#149a7c] bg-[#fcf9f2] shadow-2xl">
         <div
           className="px-6 py-4 text-white flex items-center justify-between gap-3"
           style={{ backgroundColor: asset.color }}

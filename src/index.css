@@ -12,6 +12,7 @@
   #root {
     width: 100%;
     height: 100%;
+    height: 100dvh;
     margin: 0;
     padding: 0;
     overflow: hidden;
@@ -20,6 +21,13 @@
     color: #0f2942;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  input,
+  textarea,
+  select {
+    user-select: text;
+    -webkit-user-select: text;
   }
 }
 
@@ -30,6 +38,28 @@
 .font-mono-num {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+.mobile-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 41, 66, 0.55) rgba(252, 249, 242, 0.45);
+}
+
+.mobile-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mobile-scroll::-webkit-scrollbar-track {
+  background: rgba(252, 249, 242, 0.45);
+  border-radius: 9999px;
+}
+
+.mobile-scroll::-webkit-scrollbar-thumb {
+  background: rgba(15, 41, 66, 0.55);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 @media (prefers-reduced-motion: reduce) {

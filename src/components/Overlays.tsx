@@ -29,7 +29,7 @@ export const LandmarkInfoCard: React.FC<LandmarkInfoCardProps> = ({ tile, onClos
   return (
     <aside
       aria-label={`${tile.name} lokasyon bilgisi`}
-      className="fixed top-20 right-4 z-20 w-80 max-w-[92vw] rounded-2xl border-2 bg-[#fcf9f2] shadow-2xl overflow-hidden"
+      className="fixed top-28 lg:top-20 right-2 sm:right-4 z-20 w-80 max-w-[92vw] rounded-2xl border-2 bg-[#fcf9f2] shadow-2xl overflow-hidden"
       style={{ borderColor: tile.accentColor }}
     >
       <div
@@ -97,7 +97,7 @@ export const SpecialEventToastBanner: React.FC<SpecialEventToastBannerProps> = (
   return (
     <div
       role="status"
-      className={`fixed top-20 left-1/2 -translate-x-1/2 z-30 max-w-lg w-[92vw] rounded-2xl border-2 px-4 py-3 shadow-2xl flex items-start justify-between gap-3 ${palette[toast.kind]}`}
+      className={`fixed top-28 lg:top-20 left-1/2 -translate-x-1/2 z-30 max-w-lg w-[92vw] rounded-2xl border-2 px-4 py-3 shadow-2xl flex items-start justify-between gap-3 ${palette[toast.kind]}`}
     >
       <div className="flex items-start gap-2.5">
         <Sparkles className="h-5 w-5 shrink-0 mt-0.5" />
@@ -482,7 +482,7 @@ export const DiceResultBanner: React.FC<DiceResultBannerProps> = ({ diceValue, t
       data-testid="dice-result-banner"
       role="status"
       aria-live="assertive"
-      className="fixed top-24 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
+      className="fixed top-30 lg:top-24 left-1/2 -translate-x-1/2 z-30 pointer-events-none w-[90vw] max-w-sm sm:w-auto sm:max-w-none"
     >
       <div
         className="flex items-center gap-4 rounded-2xl border-4 px-6 py-4 shadow-2xl"
@@ -551,7 +551,7 @@ export const FpsCameraHudBadge: React.FC<FpsCameraHudBadgeProps> = ({
     <div
       data-testid="fps-camera-badge"
       role="status"
-      className="fixed top-22 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
+      className="fixed top-28 lg:top-22 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
     >
       <div
         className="flex items-center gap-3 rounded-xl border-2 px-4 py-2 shadow-xl"
@@ -610,7 +610,7 @@ export const JailDecisionModal: React.FC<JailDecisionModalProps> = ({
       aria-modal="true"
       aria-labelledby="jail-decision-title"
     >
-      <div className="w-full max-w-md rounded-2xl border-4 border-[#475569] bg-[#fcf9f2] shadow-2xl overflow-hidden">
+      <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain mobile-scroll rounded-2xl border-4 border-[#475569] bg-[#fcf9f2] shadow-2xl">
         <div className="bg-[#334155] px-6 py-4 text-white flex items-center gap-3">
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 shrink-0">
             <ShieldAlert className="h-6 w-6 text-[#ffd166]" />
