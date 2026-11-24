@@ -84,13 +84,13 @@ export const TeacherPanelModal: React.FC<TeacherPanelModalProps> = ({
         </div>
 
         <div className="p-5 overflow-y-auto space-y-4">
-          {/* Row 1: 15:00 Timer & Question Deck Controls */}
+          {/* Row 1: 25:00 Timer & Question Deck Controls */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <div className="rounded-xl border border-[#dfd3be] bg-white p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase text-[#3a2863]">
                   <Clock className="h-4 w-4" />
-                  Ders Zamanlayıcısı (15:00)
+                  Ders Zamanlayıcısı (25:00)
                 </span>
                 <span className="font-mono-num text-lg font-black text-[#0f2942]">
                   {formatCountdown(gameState.remainingSeconds)}
@@ -112,7 +112,7 @@ export const TeacherPanelModal: React.FC<TeacherPanelModalProps> = ({
                   className="inline-flex items-center gap-1.5 rounded-lg bg-[#eef2f6] hover:bg-[#dce4ec] px-3 py-2 text-xs font-bold text-[#0f2942] cursor-pointer"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
-                  15:00 Sıfırla
+                  25:00 Sıfırla
                 </button>
                 <button
                   type="button"

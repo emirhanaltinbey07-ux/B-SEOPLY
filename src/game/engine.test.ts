@@ -33,6 +33,7 @@ import {
   PROPERTY_ASSETS,
   QUESTION_CARDS,
   QUESTION_TIME_LIMIT_SECONDS,
+  TOTAL_GAME_SECONDS,
 } from './data';
 
 test('24-tile track has exact composition: 1 start, 11 Istanbul locations (incl. Taksim), 5 questions, 4 rewards, 3 jails', () => {
@@ -231,7 +232,8 @@ test('all 20 questions can be played cleanly across 3 teams and victory ranking 
   const ranked = getRankedTeams(customTeams);
   assert.equal(getTeamRealEstateCount(ranked[0]), 3);
   assert.equal(ranked[0].id, 2);
-  assert.equal(formatCountdown(900), '15:00');
+  assert.equal(TOTAL_GAME_SECONDS, 25 * 60);
+  assert.equal(formatCountdown(TOTAL_GAME_SECONDS), '25:00');
 });
 
 test('team characters are Etken, Edilgen, and Dönüşlü with exact requested traits and defaults', () => {

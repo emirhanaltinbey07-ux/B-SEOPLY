@@ -8,7 +8,7 @@ import {
   QuestionCard,
 } from './types';
 
-export const TOTAL_GAME_SECONDS = 15 * 60; // 15 dakika
+export const TOTAL_GAME_SECONDS = 25 * 60; // 25 dakika
 export const FINAL_PHASE_THRESHOLD_SECONDS = 5 * 60; // Son 5 dakika
 export const INITIAL_TEAM_BP = 100; // Her takım tam 100 BP ile başlar
 export const START_PASS_BONUS_BP = 50; // Başlangıca her dönüşte +50 BP
