@@ -7,7 +7,6 @@ import {
   updateCharacterNameplate,
 } from './characters';
 import {
-  createBankBuildingMesh,
   createLandmarkMaterials,
   createLandmarkMesh,
 } from './landmarks';
@@ -31,7 +30,7 @@ export interface BoardTile3D {
 }
 
 export interface Deck3D {
-  kind: 'question' | 'property';
+  kind: 'question' | 'property' | 'chance';
   group: THREE.Group;
   hitBox: THREE.Mesh;
   glowRing: THREE.Mesh;
@@ -50,12 +49,12 @@ export interface BoardElements {
   interactables: THREE.Object3D[];
   boardTiles: BoardTile3D[];
   questionDeck: Deck3D;
+  chanceDeck: Deck3D;
   propertyDeck: Deck3D;
   flyingCard: FlyingCard3D;
   pawns: CharacterFigurine3D[];
   diceGroup: THREE.Group;
   diceMesh: THREE.Mesh;
-  bankGroup: THREE.Group;
   purchasedGroup: THREE.Group;
   turkishFlagMesh: THREE.Mesh;
   turkishFlagBaseZ: Float32Array;
@@ -72,7 +71,7 @@ export interface BoardElements {
 }
 
 function createPhysicalDeck(
-  kind: 'question' | 'property',
+  kind: 'question' | 'property' | 'chance',
   pos: THREE.Vector3,
   topTex: THREE.CanvasTexture,
   accentHex: number,
@@ -81,9 +80,9 @@ function createPhysicalDeck(
   const group = new THREE.Group();
   group.position.copy(pos);
 
-  const cardW = 3.1;
-  const cardD = 4.05;
-  const stackH = 0.78;
+  const cardW = 2.6;
+  const cardD = 3.45;
+  const stackH = 0.72;
 
   const edgeCanvas = document.createElement('canvas');
   edgeCanvas.width = 64;
@@ -116,7 +115,7 @@ function createPhysicalDeck(
   group.add(stackMesh);
 
   const glowRing = new THREE.Mesh(
-    new THREE.RingGeometry(2.45, 2.88, 32),
+    new THREE.RingGeometry(2.05, 2.42, 32),
     new THREE.MeshBasicMaterial({
       color: accentHex,
       side: THREE.DoubleSide,
@@ -129,7 +128,7 @@ function createPhysicalDeck(
   group.add(glowRing);
 
   const shadow = new THREE.Mesh(
-    new THREE.PlaneGeometry(cardW + 0.9, cardD + 0.9),
+    new THREE.PlaneGeometry(cardW + 0.8, cardD + 0.8),
     new THREE.MeshBasicMaterial({
       map: shadowTex,
       transparent: true,
@@ -142,11 +141,18 @@ function createPhysicalDeck(
   group.add(shadow);
 
   const hitBox = new THREE.Mesh(
-    new THREE.BoxGeometry(cardW + 0.45, stackH + 0.75, cardD + 0.45),
+    new THREE.BoxGeometry(cardW + 0.4, stackH + 0.75, cardD + 0.4),
     new THREE.MeshBasicMaterial({ visible: false })
   );
   hitBox.position.y = (stackH + 0.75) / 2;
-  hitBox.userData = { interactType: kind === 'question' ? 'question_deck' : 'property_deck' };
+  hitBox.userData = {
+    interactType:
+      kind === 'question'
+        ? 'question_deck'
+        : kind === 'chance'
+          ? 'chance_deck'
+          : 'property_deck',
+  };
   group.add(hitBox);
 
   return {
@@ -408,7 +414,7 @@ export function createBoardElements(maxAniso: number): BoardElements {
       const signSprite = createFloatingSignSprite(
         tile.shortLabel,
         tile.accentColor,
-        tile.type === 'start' ? 'HER DÖNÜŞ +50 BP' : tile.districtTag
+        tile.type === 'start' ? 'HER DÖNÜŞ +50 TL' : tile.districtTag
       );
       signSprite.position.set(tile.landmarkPos[0], signHeight, tile.landmarkPos[1]);
       root.add(signSprite);
@@ -431,38 +437,28 @@ export function createBoardElements(maxAniso: number): BoardElements {
     });
   });
 
-  // 4. Recognizable 3D Istanbul BANKA Building on SE Plaza Corner (Clickable Finance Center!)
-  const bankGroup = createBankBuildingMesh(landmarkMats);
-  bankGroup.position.set(13.8, -0.6, 13.8);
-  bankGroup.rotation.y = -Math.PI * 0.25;
-  root.add(bankGroup);
-
-  const bankSign = createFloatingSignSprite('BANKA', '#d49a1a', 'KREDİ · BORÇ · SATIŞ');
-  bankSign.position.set(13.8, 4.3, 13.8);
-  root.add(bankSign);
-
-  const bankHit = new THREE.Mesh(
-    new THREE.BoxGeometry(4.0, 4.2, 3.6),
-    new THREE.MeshBasicMaterial({ visible: false })
-  );
-  bankHit.position.set(13.8, 1.5, 13.8);
-  bankHit.userData = { interactType: 'bank' };
-  root.add(bankHit);
-  interactables.push(bankHit);
-
-  // 5. Two Prominent Physical 3D Card Decks on the Center Park Lawn
+  // 4. Three Prominent Physical 3D Card Decks on the Center Park Lawn
+  //    (SORU KARTLARI, ÖDÜL YA DA CEZA, İLÇE KARTLARI)
   const qDeckTex = createCardDeckTexture(
     'SORU',
     'KARTLARI',
-    '20 FİİLDE ÇATI',
-    '#f56e0c',
-    '#d6420a',
+    '20 SÖZ SANATLARI',
+    '#6d44a6',
+    '#4c2b7a',
+    maxAniso
+  );
+  const cDeckTex = createCardDeckTexture(
+    'ÖDÜL YA DA',
+    'CEZA',
+    'SÜRPRİZ KART',
+    '#d81b75',
+    '#9c1154',
     maxAniso
   );
   const pDeckTex = createCardDeckTexture(
-    'EMLAK',
+    'İLÇE',
     'KARTLARI',
-    'İSTANBUL MÜLKÜ',
+    'İSTANBUL İLÇELERİ',
     '#0d9978',
     '#096b57',
     maxAniso
@@ -470,30 +466,37 @@ export function createBoardElements(maxAniso: number): BoardElements {
 
   const questionDeck = createPhysicalDeck(
     'question',
-    new THREE.Vector3(-3.8, 0.08, 3.85),
+    new THREE.Vector3(-4.55, 0.08, 4.45),
     qDeckTex,
     0xf27b1a,
     shadowTex
   );
+  const chanceDeck = createPhysicalDeck(
+    'chance',
+    new THREE.Vector3(0, 0.08, 4.45),
+    cDeckTex,
+    0xd81b75,
+    shadowTex
+  );
   const propertyDeck = createPhysicalDeck(
     'property',
-    new THREE.Vector3(3.8, 0.08, 3.85),
+    new THREE.Vector3(4.55, 0.08, 4.45),
     pDeckTex,
     0x149a7c,
     shadowTex
   );
-  root.add(questionDeck.group, propertyDeck.group);
-  interactables.push(questionDeck.hitBox, propertyDeck.hitBox);
+  root.add(questionDeck.group, chanceDeck.group, propertyDeck.group);
+  interactables.push(questionDeck.hitBox, chanceDeck.hitBox, propertyDeck.hitBox);
 
-  // 6. Animated 3D Flying & Flipping Card
+  // 5. Animated 3D Flying & Flipping Card
   const cardFrontMat = new THREE.MeshStandardMaterial({
-    map: createCardFrontTexture('SORU KARTI', '#f27b1a', maxAniso),
+    map: createCardFrontTexture('SORU KARTI', '#6d44a6', maxAniso),
     roughness: 0.3,
   });
   const cardBackMat = new THREE.MeshStandardMaterial({ map: qDeckTex, roughness: 0.3 });
   const cardEdgeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.45 });
 
-  const flyingCardMesh = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.07, 4.05), [
+  const flyingCardMesh = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.07, 3.45), [
     cardEdgeMat,
     cardEdgeMat,
     cardBackMat,
@@ -534,7 +537,7 @@ export function createBoardElements(maxAniso: number): BoardElements {
     return figurine;
   });
 
-  // 8. Physical 3D Die between the two decks on the green lawn
+  // 8. Physical 3D Die positioned cleanly below the SÖZOPLY banner above the 3 decks
   const diceFaces = [3, 4, 1, 6, 2, 5].map(
     (v) =>
       new THREE.MeshStandardMaterial({
@@ -544,7 +547,7 @@ export function createBoardElements(maxAniso: number): BoardElements {
       })
   );
   const diceGroup = new THREE.Group();
-  diceGroup.position.set(0, 0.7, 3.85);
+  diceGroup.position.set(0, 0.7, 1.48);
   const diceMesh = new THREE.Mesh(new THREE.BoxGeometry(1.24, 1.24, 1.24), diceFaces);
   diceMesh.castShadow = true;
   diceMesh.userData = { interactType: 'dice' };
@@ -620,12 +623,12 @@ export function createBoardElements(maxAniso: number): BoardElements {
     interactables,
     boardTiles,
     questionDeck,
+    chanceDeck,
     propertyDeck,
     flyingCard,
     pawns,
     diceGroup,
     diceMesh,
-    bankGroup,
     purchasedGroup,
     turkishFlagMesh: turkishFlag.flagMesh,
     turkishFlagBaseZ: turkishFlag.baseZ,

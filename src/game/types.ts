@@ -12,6 +12,7 @@ export type TurnPhase =
   | 'ready_to_draw_property'
   | 'drawing_property_card'
   | 'viewing_property_card'
+  | 'ready_to_draw_chance'
   | 'drawing_chance_card'
   | 'viewing_chance_card'
   | 'turn_complete';
@@ -130,7 +131,7 @@ export interface Team {
   correctAnswers: number;
   wrongAnswers: number;
   jailTurnsRemaining: number; // 0 or 1 (pay 50 BP bail OR wait 1 turn without solving a question)
-  nextPropertyDiscount: number; // e.g. 0.25 or 0.35
+  nextPropertyDiscount: number; // Fixed TL discount amount, e.g. 25 or 35 TL
   extraRollPending: boolean;
   activeBankLoan: BankLoan | null;
   hasUsedBankLoan: boolean; // Bankadan oyun boyunca yalnızca 1 kez kredi çekilebilir!

@@ -4,6 +4,11 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { BOARD_TILES } from '../game/data';
 import { CharacterAvatarId } from '../game/types';
 import { createBoardElements, BoardElements } from './boardElements';
+import {
+  getDiceCameraTimings,
+  getExpressionForAnimMode,
+  CharacterReactionMode,
+} from './characterExpressions';
 import { animateCharacterPose } from './characters';
 import { createIstanbulEnvironment, IstanbulEnvironment } from './environment';
 import { createCardDeckTexture, createCardFrontTexture } from './materials';
@@ -12,8 +17,8 @@ export interface SceneCallbacks {
   onClickTile: (tileIndex: number) => void;
   onClickQuestionDeck: () => void;
   onClickPropertyDeck: () => void;
+  onClickChanceDeck: () => void;
   onClickDice: () => void;
-  onClickBank: () => void;
   onClickVaultChest: () => void;
 }
 
@@ -37,6 +42,11 @@ interface StudentRunAnimation {
   segmentIdx: number;
   segmentStartMs: number;
   segmentDurationMs: number;
+  entryStartMs: number;
+  entryDurationMs: number;
+  entryFromPos: THREE.Vector3;
+  entryFromLookAt: THREE.Vector3;
+  walkingStarted: boolean;
   fpsForward: THREE.Vector3;
   onStep?: (stepIdx: number) => void;
   onComplete: () => void;
@@ -53,14 +63,26 @@ interface CardFlipAnimation {
 
 interface CharacterReaction {
   teamId: number;
-  mode: 'celebrate' | 'sad';
+  mode: CharacterReactionMode;
   endTimeMs: number;
+  faceCameraYaw: number | null;
+}
+
+interface CameraTween {
+  active: boolean;
+  startTimeMs: number;
+  durationMs: number;
+  startPos: THREE.Vector3;
+  endPos: THREE.Vector3;
+  startLook: THREE.Vector3;
+  endLook: THREE.Vector3;
 }
 
 const _vec3 = new THREE.Vector3();
 const _segDir = new THREE.Vector3();
-const _targetCamPos = new THREE.Vector3();
 const _targetLookAt = new THREE.Vector3();
+const _fpsCamPos = new THREE.Vector3();
+const _fpsLookAt = new THREE.Vector3();
 const _pointer = new THREE.Vector2();
 
 function detectSoftwareWebGL(): boolean {
@@ -116,13 +138,14 @@ export class IstanbulSceneController {
   private elapsedTotal = 0;
 
   private titleOrbitMode = true;
-  private cameraTransitionActive = false;
+  private cameraTween: CameraTween | null = null;
   private desiredCamPos = new THREE.Vector3(-23.0, 27.5, 30.5);
   private desiredLookAt = new THREE.Vector3(0, -0.2, 1.8);
 
   private activeTileHighlight = 0;
   private highlightQuestionDeck = false;
   private highlightPropertyDeck = false;
+  private highlightChanceDeck = false;
   private jailedTeamIds = new Set<number>();
 
   private lastHoverCheck = 0;
@@ -184,13 +207,13 @@ export class IstanbulSceneController {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = !this.isSoftwareGl;
     this.controls.dampingFactor = 0.06;
-    this.controls.minDistance = 12;
+    this.controls.minDistance = 2.8;
     this.controls.maxDistance = 86;
-    this.controls.maxPolarAngle = Math.PI * 0.44;
-    this.controls.minPolarAngle = 0.28;
+    this.controls.maxPolarAngle = Math.PI * 0.485;
+    this.controls.minPolarAngle = 0.25;
     this.controls.target.set(0, -0.2, 1.8);
     this.controls.addEventListener('start', () => {
-      this.cameraTransitionActive = false;
+      this.cameraTween = null;
     });
 
     const hemiLight = new THREE.HemisphereLight(0x9bd8ff, 0x456b2e, 0.62);
@@ -295,10 +318,10 @@ export class IstanbulSceneController {
       this.callbacks.onClickQuestionDeck();
     } else if (hitData.interactType === 'property_deck') {
       this.callbacks.onClickPropertyDeck();
+    } else if (hitData.interactType === 'chance_deck') {
+      this.callbacks.onClickChanceDeck();
     } else if (hitData.interactType === 'dice') {
       this.callbacks.onClickDice();
-    } else if (hitData.interactType === 'bank') {
-      this.callbacks.onClickBank();
     } else if (hitData.interactType === 'vault_chest') {
       this.callbacks.onClickVaultChest();
     } else if (hitData.interactType === 'tile' && typeof hitData.tileIndex === 'number') {
@@ -332,45 +355,130 @@ export class IstanbulSceneController {
     }
   }
 
-  public focusOverview() {
+  private setCameraStageAttr(stage: string) {
+    if (typeof document !== 'undefined') {
+      document.body.dataset.cameraStage = stage;
+    }
+  }
+
+  private startCameraTween(
+    endPosX: number,
+    endPosY: number,
+    endPosZ: number,
+    endLookX: number,
+    endLookY: number,
+    endLookZ: number,
+    durationMs: number
+  ) {
+    this.desiredCamPos.set(endPosX, endPosY, endPosZ);
+    this.desiredLookAt.set(endLookX, endLookY, endLookZ);
+    this.cameraTween = {
+      active: true,
+      startTimeMs: performance.now(),
+      durationMs: Math.max(120, durationMs),
+      startPos: this.camera.position.clone(),
+      endPos: this.desiredCamPos.clone(),
+      startLook: this.controls.target.clone(),
+      endLook: this.desiredLookAt.clone(),
+    };
+  }
+
+  public focusOverview(fast = false) {
     const scale = this.computeOverviewScale(this.camera.aspect);
-    this.desiredCamPos.set(-23.0 * scale, 27.5 * scale, 30.5 * scale);
-    this.desiredLookAt.set(0, -0.2, 1.8);
-    this.cameraTransitionActive = true;
+    const dur = this.isSoftwareGl ? (fast ? 380 : 460) : fast ? 680 : 850;
+    this.startCameraTween(
+      -23.0 * scale,
+      27.5 * scale,
+      30.5 * scale,
+      0,
+      -0.2,
+      1.8,
+      dur
+    );
+    this.setCameraStageAttr('board_overview');
   }
 
   public focusTile(tileIndex: number) {
     const tile = BOARD_TILES[tileIndex];
     if (!tile) return;
     this.activeTileHighlight = tileIndex;
-    this.desiredCamPos.set(
-      tile.cameraFocusOffset[0],
-      tile.cameraFocusOffset[1],
-      tile.cameraFocusOffset[2]
-    );
     const lx = tile.landmarkPos ? (tile.boardPos[0] + tile.landmarkPos[0]) * 0.45 : tile.boardPos[0] * 0.85;
     const lz = tile.landmarkPos ? (tile.boardPos[1] + tile.landmarkPos[1]) * 0.45 : tile.boardPos[1] * 0.85;
-    this.desiredLookAt.set(lx, 1.1, lz);
-    this.cameraTransitionActive = true;
+    this.startCameraTween(
+      tile.cameraFocusOffset[0],
+      tile.cameraFocusOffset[1],
+      tile.cameraFocusOffset[2],
+      lx,
+      1.1,
+      lz,
+      this.isSoftwareGl ? 360 : 720
+    );
+    this.setCameraStageAttr('tile_focus');
   }
 
-  public focusBank() {
-    this.desiredCamPos.set(22.5, 13.5, 23.0);
-    this.desiredLookAt.set(13.5, 1.4, 13.5);
-    this.cameraTransitionActive = true;
+  public focusCharacterFace(teamId: number): number | null {
+    const pawn = this.board.pawns[teamId];
+    if (!pawn || this.runAnim?.active) return null;
+    const pos = pawn.group.position;
+
+    // Aim inward from the tile toward the open board center so buildings never obstruct the portrait
+    let inX = -pos.x;
+    let inZ = -pos.z;
+    const len = Math.hypot(inX, inZ);
+    if (len > 0.01) {
+      inX /= len;
+      inZ /= len;
+    } else {
+      inX = 0;
+      inZ = 1;
+    }
+    const rightX = -inZ;
+    const rightZ = inX;
+
+    // Character turns smoothly to face the portrait camera directly
+    const faceCameraYaw = Math.atan2(inX, inZ);
+    pawn.group.rotation.y = faceCameraYaw;
+
+    // 3/4 portrait close-up looking directly at the character's dynamic 3D eyes, brows & mouth
+    this.startCameraTween(
+      pos.x + inX * 3.5 + rightX * 0.38,
+      pos.y + 1.92,
+      pos.z + inZ * 3.5 + rightZ * 0.38,
+      pos.x,
+      pos.y + 1.48,
+      pos.z,
+      this.isSoftwareGl ? 320 : 620
+    );
+    this.setCameraStageAttr('character_face');
+    return faceCameraYaw;
   }
 
-  public setDeckHighlights(questionActive: boolean, propertyActive: boolean) {
+  public setDeckHighlights(
+    questionActive: boolean,
+    propertyActive: boolean,
+    chanceActive = false
+  ) {
     this.highlightQuestionDeck = questionActive;
     this.highlightPropertyDeck = propertyActive;
+    this.highlightChanceDeck = chanceActive;
   }
 
-  public playCharacterReaction(teamId: number, mode: 'celebrate' | 'sad') {
+  public playCharacterReaction(
+    teamId: number,
+    mode: CharacterReactionMode,
+    durationMs = 3800,
+    focusFace = false
+  ) {
+    const faceCameraYaw = focusFace ? this.focusCharacterFace(teamId) : null;
     this.reaction = {
       teamId,
       mode,
-      endTimeMs: performance.now() + 2200,
+      endTimeMs: performance.now() + durationMs,
+      faceCameraYaw,
     };
+    if (typeof document !== 'undefined') {
+      document.body.dataset.expression = getExpressionForAnimMode(mode);
+    }
   }
 
   public syncTeams(
@@ -414,9 +522,7 @@ export class IstanbulSceneController {
     if (championName) {
       this.env.activateChampionPlane(championName, championColorHex ?? '#1d6fd1', this.maxAniso);
     }
-    this.desiredCamPos.set(-25.5, 22.0, 34.5);
-    this.desiredLookAt.set(0, 4.6, 0);
-    this.cameraTransitionActive = true;
+    this.startCameraTween(-25.5, 22.0, 34.5, 0, 4.6, 0, this.isSoftwareGl ? 420 : 850);
   }
 
   public resetCelebration() {
@@ -438,10 +544,19 @@ export class IstanbulSceneController {
     return new THREE.Vector3(tile.boardPos[0] + ox, 0.16, tile.boardPos[1] + oz);
   }
 
+  /** Stage 1 of dice camera choreography: dramatic close-up zoom onto the tumbling 3D die */
   public animateDiceRoll(targetValue: number, onComplete: () => void) {
-    this.desiredCamPos.set(-9.5, 20.5, 23.0);
-    this.desiredLookAt.set(0, 0.5, 2.8);
-    this.cameraTransitionActive = true;
+    const timings = getDiceCameraTimings(this.isSoftwareGl);
+    this.startCameraTween(
+      0.0,
+      4.35,
+      5.85,
+      0.0,
+      0.92,
+      1.48,
+      this.isSoftwareGl ? 320 : 560
+    );
+    this.setCameraStageAttr('dice_zoom');
 
     const targetRot = getDiceTargetRotation(targetValue);
     const randTurn = () => (Math.random() < 0.5 ? 1 : -1) * (2 + Math.floor(Math.random() * 3)) * Math.PI * 2;
@@ -450,14 +565,14 @@ export class IstanbulSceneController {
       targetRot.y + randTurn(),
       targetRot.z + randTurn()
     );
-    const arcX = (Math.random() < 0.5 ? 1 : -1) * (0.9 + Math.random() * 0.9);
-    const arcZ = (Math.random() < 0.5 ? 1 : -1) * (0.55 + Math.random() * 0.65);
-    const peakHeight = 3.1 + Math.random() * 1.1;
+    const arcX = (Math.random() < 0.5 ? 1 : -1) * (0.3 + Math.random() * 0.3);
+    const arcZ = (Math.random() < 0.5 ? 1 : -1) * (0.2 + Math.random() * 0.2);
+    const peakHeight = 1.85 + Math.random() * 0.5;
 
     this.diceAnim = {
       active: true,
       startTimeMs: performance.now(),
-      durationMs: this.isSoftwareGl ? 420 : 850,
+      durationMs: timings.diceRollMs,
       targetValue,
       startRot: this.board.diceMesh.rotation.clone(),
       targetRot: spinRot,
@@ -468,7 +583,7 @@ export class IstanbulSceneController {
     };
   }
 
-  /** Slow step-by-step student advancement in First-Person (FPS) perspective along the 24-tile Istanbul track */
+  /** Stage 3: Smooth swoop from full board overview into First-Person (FPS) step-by-step walk */
   public animateStudentRun(
     teamId: number,
     fromTile: number,
@@ -476,10 +591,12 @@ export class IstanbulSceneController {
     onStep: (stepIdx: number) => void,
     onComplete: () => void
   ) {
-    // Ensure any previous interrupted run restores visibility
+    const timings = getDiceCameraTimings(this.isSoftwareGl);
+    // Ensure any previous interrupted run restores visibility for all pawns
     if (this.runAnim) {
-      const prevPawn = this.board.pawns[this.runAnim.teamId];
-      if (prevPawn) prevPawn.group.visible = true;
+      for (const p of this.board.pawns) {
+        p.group.visible = true;
+      }
     }
 
     const waypoints: THREE.Vector3[] = [];
@@ -497,21 +614,23 @@ export class IstanbulSceneController {
       }
     }
 
-    // Hide active student's own mesh during FPS perspective to prevent head/hair clipping
-    const activePawn = this.board.pawns[teamId];
-    if (activePawn) {
-      activePawn.group.visible = false;
-    }
     this.controls.enabled = false;
-    this.cameraTransitionActive = false;
+    this.cameraTween = null;
+    this.setCameraStageAttr('fps_walk');
 
+    const now = performance.now();
     this.runAnim = {
       active: true,
       teamId,
       waypoints,
       segmentIdx: 0,
-      segmentStartMs: performance.now(),
-      segmentDurationMs: this.isSoftwareGl ? 420 : 1150,
+      segmentStartMs: now + timings.fpsBlendMs,
+      segmentDurationMs: timings.stepDurationMs,
+      entryStartMs: now,
+      entryDurationMs: timings.fpsBlendMs,
+      entryFromPos: this.camera.position.clone(),
+      entryFromLookAt: this.controls.target.clone(),
+      walkingStarted: false,
       fpsForward: initialForward,
       onStep,
       onComplete,
@@ -524,14 +643,18 @@ export class IstanbulSceneController {
     onComplete: () => void
   ) {
     const sourceDeck =
-      deckKind === 'property' ? this.board.propertyDeck : this.board.questionDeck;
+      deckKind === 'property'
+        ? this.board.propertyDeck
+        : deckKind === 'chance'
+          ? this.board.chanceDeck
+          : this.board.questionDeck;
 
     const accent =
       deckKind === 'property'
         ? '#149a7c'
         : deckKind === 'chance'
-          ? '#c4553a'
-          : '#f27b1a';
+          ? '#d81b75'
+          : '#6d44a6';
 
     const oldFront = this.board.flyingCard.frontMat.map;
     this.board.flyingCard.frontMat.map = createCardFrontTexture(
@@ -544,11 +667,15 @@ export class IstanbulSceneController {
 
     const oldBack = this.board.flyingCard.backMat.map;
     this.board.flyingCard.backMat.map = createCardDeckTexture(
-      deckKind === 'property' ? 'EMLAK' : deckKind === 'chance' ? 'BONUS VE' : 'SORU',
-      deckKind === 'property' ? 'KARTLARI' : deckKind === 'chance' ? 'İNDİRİM KARTI' : 'KARTLARI',
-      deckKind === 'property' ? 'İSTANBUL MÜLKÜ' : deckKind === 'chance' ? 'HER SORU SONRASI' : '20 FİİLDE ÇATI',
+      deckKind === 'property' ? 'İLÇE' : deckKind === 'chance' ? 'ÖDÜL YA DA' : 'SORU',
+      deckKind === 'property' ? 'KARTLARI' : deckKind === 'chance' ? 'CEZA' : 'KARTLARI',
+      deckKind === 'property'
+        ? 'İSTANBUL İLÇELERİ'
+        : deckKind === 'chance'
+          ? 'SÜRPRİZ KART'
+          : '20 SÖZ SANATLARI',
       accent,
-      '#d94e16',
+      deckKind === 'question' ? '#4c2b7a' : deckKind === 'chance' ? '#9c1154' : '#096b57',
       this.maxAniso
     );
     this.board.flyingCard.backMat.needsUpdate = true;
@@ -632,20 +759,22 @@ export class IstanbulSceneController {
       );
       this.camera.lookAt(0, 1.2, 2.5);
     } else if (!this.runAnim?.active) {
-      if (this.cameraTransitionActive) {
-        const dampFactor = 1 - Math.exp(-4.5 * dt);
-        _targetCamPos.copy(this.desiredCamPos);
-        _targetLookAt.copy(this.desiredLookAt);
-        this.camera.position.lerp(_targetCamPos, dampFactor);
-        this.controls.target.lerp(_targetLookAt, dampFactor);
-        if (
-          this.camera.position.distanceTo(_targetCamPos) < 0.15 &&
-          this.controls.target.distanceTo(_targetLookAt) < 0.12
-        ) {
-          this.cameraTransitionActive = false;
+      if (this.cameraTween?.active) {
+        const tw = this.cameraTween;
+        const u = Math.min(1, Math.max(0, (nowMs - tw.startTimeMs) / tw.durationMs));
+        const ease = 1 - Math.pow(1 - u, 3);
+        this.camera.position.lerpVectors(tw.startPos, tw.endPos, ease);
+        this.controls.target.lerpVectors(tw.startLook, tw.endLook, ease);
+        if (u >= 1) {
+          this.camera.position.copy(tw.endPos);
+          this.controls.target.copy(tw.endLook);
+          this.cameraTween = null;
         }
       }
       this.controls.update();
+      for (const p of this.board.pawns) {
+        p.group.visible = this.camera.position.distanceTo(p.group.position) > 1.85;
+      }
     }
 
     // 3. Highlight rings & decks
@@ -668,21 +797,37 @@ export class IstanbulSceneController {
       ? 0.08 + Math.sin(this.elapsedTotal * 4.5) * 0.1 + 0.1
       : 0.08;
 
-    // 4. Articulated Student Character Pose Updates (run / celebrate / sad / jail / idle)
+    const cMat = this.board.chanceDeck.glowRing.material as THREE.MeshBasicMaterial;
+    cMat.opacity = this.highlightChanceDeck ? pulse : 0;
+    this.board.chanceDeck.group.position.y = this.highlightChanceDeck
+      ? 0.08 + Math.sin(this.elapsedTotal * 4.5) * 0.1 + 0.1
+      : 0.08;
+
+    // 4. Articulated Student Character Pose & 3D Facial Expression Updates
     if (this.reaction && nowMs > this.reaction.endTimeMs) {
       this.reaction = null;
+      if (typeof document !== 'undefined') {
+        document.body.dataset.expression = 'neutral';
+      }
     }
 
     this.board.pawns.forEach((p, idx) => {
       if (this.runAnim?.active && this.runAnim.teamId === idx) {
         animateCharacterPose(p, 'run', this.elapsedTotal);
       } else if (this.reaction && this.reaction.teamId === idx) {
+        if (this.reaction.faceCameraYaw !== null) {
+          p.group.rotation.y = this.reaction.faceCameraYaw;
+        }
         animateCharacterPose(p, this.reaction.mode, this.elapsedTotal);
       } else if (this.jailedTeamIds.has(idx)) {
         animateCharacterPose(p, 'jail', this.elapsedTotal);
       } else {
         animateCharacterPose(p, 'idle', this.elapsedTotal);
       }
+
+      // Hide giant floating nameSprite whenever camera zooms close for portrait / FPS views
+      const camDist = this.camera.position.distanceTo(p.group.position);
+      p.nameSprite.visible = camDist > 7.5 && !this.runAnim?.active;
     });
 
     // 5. Pop-in spring for purchased 3D properties
@@ -705,7 +850,7 @@ export class IstanbulSceneController {
       this.board.diceGroup.position.set(
         Math.sin(t * Math.PI * 2) * (1 - t) * this.diceAnim.arcX,
         0.7 + bounce,
-        3.85 + Math.cos(t * Math.PI) * (1 - t) * this.diceAnim.arcZ
+        1.48 + Math.cos(t * Math.PI) * (1 - t) * this.diceAnim.arcZ
       );
       this.board.diceMesh.rotation.set(
         THREE.MathUtils.lerp(this.diceAnim.startRot.x, this.diceAnim.targetRot.x, easeOut),
@@ -715,70 +860,120 @@ export class IstanbulSceneController {
 
       if (t >= 1) {
         this.board.diceMesh.rotation.copy(getDiceTargetRotation(this.diceAnim.targetValue));
-        this.board.diceGroup.position.set(0, 0.7, 3.85);
+        this.board.diceGroup.position.set(0, 0.7, 1.48);
         const cb = this.diceAnim.onComplete;
         this.diceAnim = null;
         cb();
       }
     }
 
-    // 7. Slow Step-by-Step Student Advancement in First-Person (FPS) Camera Mode!
+    // 7. Smooth Swoop from Board Overview into First-Person (FPS) Step-by-Step Walk!
     if (this.runAnim?.active) {
       const anim = this.runAnim;
       const pawn = this.board.pawns[anim.teamId];
-      const uRaw = (nowMs - anim.segmentStartMs) / anim.segmentDurationMs;
+      const entryT = Math.min(1, Math.max(0, (nowMs - anim.entryStartMs) / anim.entryDurationMs));
 
-      if (uRaw >= 1) {
-        anim.segmentIdx++;
-        anim.segmentStartMs = nowMs;
-        anim.onStep?.(anim.segmentIdx);
+      if (!anim.walkingStarted) {
+        const easeEntry =
+          entryT < 0.5
+            ? 4 * entryT * entryT * entryT
+            : 1 - Math.pow(-2 * entryT + 2, 3) / 2;
 
-        if (anim.segmentIdx >= anim.waypoints.length - 1) {
-          const finalPos = anim.waypoints[anim.waypoints.length - 1];
-          pawn.currentPos.copy(finalPos);
-          pawn.group.position.copy(finalPos);
-          pawn.group.visible = true;
-          this.controls.enabled = !this.titleOrbitMode;
-          const cb = anim.onComplete;
-          this.runAnim = null;
-          cb();
-        }
-      }
-
-      if (this.runAnim && pawn) {
-        const from = anim.waypoints[anim.segmentIdx];
-        const to = anim.waypoints[anim.segmentIdx + 1];
-        const u = Math.min(1, Math.max(0, (nowMs - anim.segmentStartMs) / anim.segmentDurationMs));
-        _vec3.lerpVectors(from, to, u);
-        pawn.group.position.set(_vec3.x, _vec3.y, _vec3.z);
-        pawn.group.rotation.y = Math.atan2(to.x - from.x, to.z - from.z);
-
-        // Smoothly steer FPS forward vector around board corners
-        _segDir.subVectors(to, from);
-        _segDir.y = 0;
-        if (_segDir.lengthSq() > 0.0001) {
-          _segDir.normalize();
-          const turnLerp = 1 - Math.exp(-8.0 * dt);
-          anim.fpsForward.lerp(_segDir, turnLerp).normalize();
-        }
-
-        // First-Person eye-level camera with gentle relaxed walking head-bob & sway
-        const headBobY = Math.sin(this.elapsedTotal * 7.2) * 0.07;
-        const sideSway = Math.cos(this.elapsedTotal * 3.6) * 0.035;
-        const rightX = -anim.fpsForward.z;
-        const rightZ = anim.fpsForward.x;
-
-        const eyeX = _vec3.x + anim.fpsForward.x * 0.32 + rightX * sideSway;
-        const eyeY = 2.05 + headBobY;
-        const eyeZ = _vec3.z + anim.fpsForward.z * 0.32 + rightZ * sideSway;
-
+        const startWp = anim.waypoints[0];
+        const eyeX = startWp.x + anim.fpsForward.x * 0.32;
+        const eyeY = 2.05;
+        const eyeZ = startWp.z + anim.fpsForward.z * 0.32;
         const lookX = eyeX + anim.fpsForward.x * 10.5;
-        const lookY = 1.52 + headBobY * 0.35;
+        const lookY = 1.52;
         const lookZ = eyeZ + anim.fpsForward.z * 10.5;
 
-        this.camera.position.set(eyeX, eyeY, eyeZ);
-        this.camera.lookAt(lookX, lookY, lookZ);
-        this.controls.target.set(lookX, lookY, lookZ);
+        _fpsCamPos.set(eyeX, eyeY, eyeZ);
+        _fpsLookAt.set(lookX, lookY, lookZ);
+        this.camera.position.lerpVectors(anim.entryFromPos, _fpsCamPos, easeEntry);
+        _targetLookAt.lerpVectors(anim.entryFromLookAt, _fpsLookAt, easeEntry);
+        this.camera.lookAt(_targetLookAt);
+        this.controls.target.copy(_targetLookAt);
+
+        // Hide active student & any other close pawn as camera swoops down to eye level
+        this.board.pawns.forEach((p, pIdx) => {
+          if (pIdx === anim.teamId) {
+            p.group.visible = entryT < 0.45;
+          } else {
+            p.group.visible = this.camera.position.distanceTo(p.group.position) > 3.2;
+          }
+        });
+
+        if (entryT >= 1) {
+          anim.walkingStarted = true;
+          anim.segmentStartMs = nowMs;
+          if (pawn) pawn.group.visible = false;
+        }
+      } else {
+        const uRaw = (nowMs - anim.segmentStartMs) / anim.segmentDurationMs;
+
+        if (uRaw >= 1) {
+          anim.segmentIdx++;
+          anim.segmentStartMs = nowMs;
+          anim.onStep?.(anim.segmentIdx);
+
+          if (anim.segmentIdx >= anim.waypoints.length - 1) {
+            const finalPos = anim.waypoints[anim.waypoints.length - 1];
+            pawn.currentPos.copy(finalPos);
+            pawn.group.position.copy(finalPos);
+            for (const p of this.board.pawns) {
+              p.group.visible = this.camera.position.distanceTo(p.group.position) > 1.85;
+            }
+            this.controls.enabled = !this.titleOrbitMode;
+            const cb = anim.onComplete;
+            this.runAnim = null;
+            cb();
+          }
+        }
+
+        if (this.runAnim && pawn) {
+          const from = anim.waypoints[anim.segmentIdx];
+          const to = anim.waypoints[anim.segmentIdx + 1];
+          const u = Math.min(1, Math.max(0, (nowMs - anim.segmentStartMs) / anim.segmentDurationMs));
+          _vec3.lerpVectors(from, to, u);
+          pawn.group.position.set(_vec3.x, _vec3.y, _vec3.z);
+          pawn.group.rotation.y = Math.atan2(to.x - from.x, to.z - from.z);
+
+          // Smoothly steer FPS forward vector around board corners
+          _segDir.subVectors(to, from);
+          _segDir.y = 0;
+          if (_segDir.lengthSq() > 0.0001) {
+            _segDir.normalize();
+            const turnLerp = 1 - Math.exp(-8.0 * dt);
+            anim.fpsForward.lerp(_segDir, turnLerp).normalize();
+          }
+
+          // First-Person eye-level camera with gentle relaxed walking head-bob & sway
+          const headBobY = Math.sin(this.elapsedTotal * 7.2) * 0.07;
+          const sideSway = Math.cos(this.elapsedTotal * 3.6) * 0.035;
+          const rightX = -anim.fpsForward.z;
+          const rightZ = anim.fpsForward.x;
+
+          const eyeX = _vec3.x + anim.fpsForward.x * 0.32 + rightX * sideSway;
+          const eyeY = 2.05 + headBobY;
+          const eyeZ = _vec3.z + anim.fpsForward.z * 0.32 + rightZ * sideSway;
+
+          const lookX = eyeX + anim.fpsForward.x * 10.5;
+          const lookY = 1.52 + headBobY * 0.35;
+          const lookZ = eyeZ + anim.fpsForward.z * 10.5;
+
+          this.camera.position.set(eyeX, eyeY, eyeZ);
+          this.camera.lookAt(lookX, lookY, lookZ);
+          this.controls.target.set(lookX, lookY, lookZ);
+
+          // Keep FPS camera view 100% unobstructed by hiding active pawn & any other pawn right in front of the lens
+          this.board.pawns.forEach((p, pIdx) => {
+            if (pIdx === anim.teamId) {
+              p.group.visible = false;
+            } else {
+              p.group.visible = this.camera.position.distanceTo(p.group.position) > 3.2;
+            }
+          });
+        }
       }
     }
 

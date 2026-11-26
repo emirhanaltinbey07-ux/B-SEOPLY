@@ -103,21 +103,21 @@ export function createBoardCenterTexture(maxAniso: number): THREE.CanvasTexture 
   ctx.bezierCurveTo(280, 680, 720, 420, 820, 64);
   ctx.stroke();
 
-  // Horizontal sandy pad for the central BİSEOPLY banner
+  // Horizontal sandy pad for the central SÖZOPLY banner (positioned cleanly above the 3D die)
   ctx.fillStyle = '#ebb452';
   ctx.beginPath();
-  ctx.roundRect(145, 378, 734, 212, 24);
+  ctx.roundRect(145, 258, 734, 186, 24);
   ctx.fill();
   ctx.restore();
 
-  // Scattered autumn leaves on the green lawn (charming detail from Ref 1!)
+  // Scattered autumn leaves on the green lawn
   const leaves: [number, number, string][] = [
-    [180, 210, '#f57d14'],
-    [225, 248, '#fab81a'],
-    [820, 680, '#f57d14'],
-    [775, 724, '#e65314'],
-    [665, 220, '#fab81a'],
-    [320, 760, '#f57d14'],
+    [180, 195, '#f57d14'],
+    [225, 228, '#fab81a'],
+    [820, 560, '#f57d14'],
+    [200, 560, '#e65314'],
+    [665, 195, '#fab81a'],
+    [340, 555, '#f57d14'],
   ];
   for (const [lx, ly, col] of leaves) {
     ctx.fillStyle = col;
@@ -126,31 +126,33 @@ export function createBoardCenterTexture(maxAniso: number): THREE.CanvasTexture 
     ctx.fill();
   }
 
-  // Iconic Bold Crimson & White Framed BİSEOPLY Center Sign (matching Ref 1!)
+  // Iconic Bold Crimson & White Framed SÖZOPLY Center Sign
   ctx.save();
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.roundRect(172, 404, 680, 160, 18);
+  ctx.roundRect(172, 278, 680, 146, 18);
   ctx.fill();
 
   ctx.fillStyle = '#e82814';
   ctx.beginPath();
-  ctx.roundRect(186, 418, 652, 132, 12);
+  ctx.roundRect(186, 290, 652, 122, 12);
   ctx.fill();
 
   ctx.fillStyle = '#ffffff';
   ctx.font = '900 84px Georgia, serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('BİSEOPLY', 512, 474);
+  ctx.fillText('SÖZOPLY', 512, 340);
 
   ctx.fillStyle = '#ffeb99';
   ctx.font = '800 22px "Plus Jakarta Sans", sans-serif';
-  ctx.fillText('İSTANBUL SENİN · OYUN SENİN', 512, 526);
+  ctx.fillText('SÖZ SANATLARI · İSTANBUL OYUNU', 512, 388);
   ctx.restore();
 
-  // Sandy deck pads for the 2 physical decks in the lower & upper-left/right park zones
-  const drawPad = (x: number, y: number, w: number, h: number, label: string) => {
+  // 3 Sandy deck pads for SORU KARTLARI, ÖDÜL YA DA CEZA, and İLÇE KARTLARI
+  const drawPad = (centerX: number, centerY: number, w: number, h: number, label: string) => {
+    const x = centerX - w / 2;
+    const y = centerY - h / 2;
     ctx.fillStyle = '#d49032';
     ctx.beginPath();
     ctx.roundRect(x - 10, y - 10, w + 20, h + 20, 16);
@@ -160,13 +162,14 @@ export function createBoardCenterTexture(maxAniso: number): THREE.CanvasTexture 
     ctx.roundRect(x, y, w, h, 12);
     ctx.fill();
     ctx.fillStyle = '#ffffff';
-    ctx.font = '800 22px "Plus Jakarta Sans", sans-serif';
+    ctx.font = '800 20px "Plus Jakarta Sans", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(label, x + w / 2, y + h + 36);
+    ctx.fillText(label, centerX, y + h + 28);
   };
 
-  drawPad(134, 622, 260, 260, 'SORU KARTLARI');
-  drawPad(630, 622, 260, 260, 'EMLAK KARTLARI');
+  drawPad(221, 797, 206, 232, 'SORU KARTLARI');
+  drawPad(512, 797, 206, 232, 'ÖDÜL YA DA CEZA');
+  drawPad(803, 797, 206, 232, 'İLÇE KARTLARI');
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -292,7 +295,7 @@ export function createBoardTileTexture(
         : tile.type === 'reward'
           ? 'ÖDÜL KARESİ'
           : tile.type === 'jail'
-            ? 'HAPİS · BEKLE'
+            ? 'MOLA · BEKLE'
             : tile.districtTag.toUpperCase();
   ctx.fillText(topTag.slice(0, 16), 90, 53);
 
@@ -306,7 +309,7 @@ export function createBoardTileTexture(
     ctx.fillText('BAŞLANGIÇ', 192, 190);
     ctx.fillStyle = '#1d6f42';
     ctx.font = '900 32px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('TUR +50 BP', 192, 256);
+    ctx.fillText('TUR +50 TL', 192, 256);
     ctx.fillStyle = '#d93829';
     ctx.font = '900 42px sans-serif';
     ctx.fillText('➜', 192, 322);
@@ -323,12 +326,12 @@ export function createBoardTileTexture(
     ctx.fillText('★', 192, 186);
     ctx.fillStyle = '#156b43';
     ctx.font = '900 40px "JetBrains Mono", monospace';
-    ctx.fillText('+10 BP', 192, 272);
+    ctx.fillText('+10 TL', 192, 272);
     ctx.fillStyle = '#6c4d10';
     ctx.font = '800 22px "Plus Jakarta Sans", sans-serif';
     ctx.fillText('HEDİYE ÖDÜL', 192, 330);
   } else if (tile.type === 'jail') {
-    // Stylized jail bars icon
+    // Stylized rest/wait pause bars icon
     ctx.strokeStyle = '#3b4a59';
     ctx.lineWidth = 10;
     for (const bx of [126, 170, 214, 258]) {
@@ -340,10 +343,10 @@ export function createBoardTileTexture(
     ctx.strokeRect(114, 128, 156, 118);
     ctx.fillStyle = '#1f2e3b';
     ctx.font = '900 30px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('HAPİS', 192, 288);
+    ctx.fillText('BEKLEME', 192, 288);
     ctx.fillStyle = '#b03025';
     ctx.font = '800 22px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('50 BP / 1 TUR', 192, 332);
+    ctx.fillText('50 TL / 1 TUR', 192, 332);
   } else {
     ctx.fillStyle = '#142a3a';
     const label = tile.shortLabel;
@@ -410,7 +413,12 @@ export function createCardDeckTexture(
   ctx.font = '900 180px Georgia, serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(titleLine1.includes('SORU') ? '?' : '★', 256, 224);
+  const emblem = titleLine1.includes('SORU')
+    ? '?'
+    : titleLine1.includes('ÖDÜL')
+      ? '!'
+      : '★';
+  ctx.fillText(emblem, 256, 224);
 
   // Clean white title banner in lower half
   ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
@@ -623,7 +631,7 @@ export function createChampionBannerTexture(
   ctx.font = '900 32px "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('★  BİSEOPLY İSTANBUL ŞAMPİYONU  ★', 512, 82);
+  ctx.fillText('★  SÖZOPLY İSTANBUL ŞAMPİYONU  ★', 512, 82);
 
   // Huge bold team name
   const display = teamName.trim().toUpperCase() || 'ŞAMPİYON TAKIM';

@@ -5,7 +5,6 @@ import {
   Coins,
   Crown,
   Eye,
-  Landmark,
   MapPin,
   Plane,
   Play,
@@ -17,7 +16,7 @@ import {
 } from 'lucide-react';
 import { CHARACTER_OPTIONS, JAIL_BAIL_BP, PROPERTY_ASSETS, QUESTION_CARDS } from '../game/data';
 import { getRankedTeams } from '../game/engine';
-import { BoardTile, PeerLoan, SpecialEventToast, Team } from '../game/types';
+import { BoardTile, SpecialEventToast, Team } from '../game/types';
 
 /* 1. Inspected Istanbul Tile / Landmark Floating Card */
 interface LandmarkInfoCardProps {
@@ -66,8 +65,8 @@ export const LandmarkInfoCard: React.FC<LandmarkInfoCardProps> = ({ tile, onClos
             {tile.type === 'question'
               ? 'Bu kareye gelen takım ortadaki SORU KARTLARI destesinden bir Türkçe sorusu çeker.'
               : tile.type === 'reward'
-                ? 'Hediye Ödül Karesi! Bu kareye gelen takım otomatik olarak +10 BP kazanır.'
-                : 'Hapis Karesi: Gelen takım 50 BP kefalet ödeyerek sorusuna devam edebilir; ödemezse bu el soru çözmez ve 1 tur bekler.'}
+                ? 'Hediye Ödül Karesi! Bu kareye gelen takım hemen +10 TL kazanır.'
+                : `Bekleme Karesi: Gelen takım ${JAIL_BAIL_BP} TL verip hemen sorusunu çözebilir; vermezse bu el soru çözmez ve 1 tur bekler.`}
           </p>
         )}
       </div>
@@ -118,16 +117,14 @@ export const SpecialEventToastBanner: React.FC<SpecialEventToastBannerProps> = (
   );
 };
 
-/* 3. Team Inventory Modal (Clearly separates Gayrimenkuller vs Araçlar & Active Debts) */
+/* 3. Team Districts & Balance Modal */
 interface TeamInventoryModalProps {
   teams: Team[];
-  peerLoans: PeerLoan[];
   onClose: () => void;
 }
 
 export const TeamInventoryModal: React.FC<TeamInventoryModalProps> = ({
   teams,
-  peerLoans,
   onClose,
 }) => {
   return (
@@ -143,13 +140,13 @@ export const TeamInventoryModal: React.FC<TeamInventoryModalProps> = ({
           <div className="flex items-center gap-2.5">
             <Briefcase className="h-6 w-6" />
             <h2 id="inventory-title" className="font-display text-2xl font-extrabold">
-              Takım Envanteri, Tapular ve Borçlar
+              Takımların İlçeleri ve Paraları
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Envanteri kapat"
+            aria-label="İlçeler panelini kapat"
             className="rounded-xl bg-white/15 hover:bg-white/25 p-2 cursor-pointer"
           >
             <X className="h-5 w-5" />
@@ -158,10 +155,9 @@ export const TeamInventoryModal: React.FC<TeamInventoryModalProps> = ({
 
         <div className="p-5 overflow-y-auto grid grid-cols-1 md:grid-cols-3 gap-4">
           {teams.map((team) => {
-            const realEstate = team.ownedAssetIds
+            const districts = team.ownedAssetIds
               .map((id) => PROPERTY_ASSETS.find((a) => a.id === id))
               .filter((a): a is NonNullable<typeof a> => Boolean(a));
-            const activeDebts = peerLoans.filter((l) => !l.paid && l.borrowerTeamId === team.id);
 
             return (
               <div
@@ -174,50 +170,32 @@ export const TeamInventoryModal: React.FC<TeamInventoryModalProps> = ({
                     {team.name}
                   </span>
                   <span className="font-mono-num text-sm font-black text-[#0c6b9a]">
-                    {team.bp} BP
+                    {team.bp} TL
                   </span>
                 </div>
 
-                {/* Gayrimenkuller (Counts toward Victory!) */}
+                {/* Alınan İlçeler */}
                 <div>
                   <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase text-[#146c43] mb-1.5">
                     <Building2 className="h-3.5 w-3.5" />
-                    Gayrimenkuller ({realEstate.length})
+                    Alınan İlçeler ({districts.length})
                   </div>
-                  {realEstate.length === 0 ? (
-                    <p className="text-xs text-[#64748b] italic">Henüz gayrimenkul alınmadı.</p>
+                  {districts.length === 0 ? (
+                    <p className="text-xs text-[#64748b] italic">Henüz ilçe alınmadı.</p>
                   ) : (
                     <ul className="space-y-1">
-                      {realEstate.map((a) => (
+                      {districts.map((a) => (
                         <li
                           key={a.id}
                           className="rounded-lg bg-[#e8f8ef] border border-[#b4e2c8] px-2.5 py-1 text-xs font-bold text-[#0f4c2f] flex justify-between"
                         >
                           <span>{a.name}</span>
-                          <span className="font-mono-num">{a.price} BP</span>
+                          <span className="font-mono-num">{a.price} TL</span>
                         </li>
                       ))}
                     </ul>
                   )}
                 </div>
-
-                {/* Active Debts */}
-                {(team.activeBankLoan || activeDebts.length > 0) && (
-                  <div className="rounded-lg bg-[#fff4eb] border border-[#e7b48a] p-2.5 text-[11px] font-bold text-[#8a3b0c] space-y-1">
-                    <div className="flex items-center gap-1 uppercase">
-                      <Landmark className="h-3.5 w-3.5" />
-                      Aktif Borçlar
-                    </div>
-                    {team.activeBankLoan && (
-                      <div>Banka Kredisi: {team.activeBankLoan.repaymentDue} BP</div>
-                    )}
-                    {activeDebts.map((d) => (
-                      <div key={d.id}>
-                        {teams[d.lenderTeamId]?.name} borcu: {d.repaymentAmount} BP
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             );
           })}
@@ -303,24 +281,24 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
           <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1 text-xs font-extrabold uppercase tracking-widest">
             <Crown className="h-4 w-4 text-[#fff3b0]" />
             {allQuestionsCompleted
-              ? `TÜM ${QUESTION_CARDS.length} SORU TAMAMLANDI · BİSEOPLY FİNAL SONUCU`
-              : 'BİSEOPLY FİNAL SONUCU'}
+              ? `TÜM ${QUESTION_CARDS.length} SORU TAMAMLANDI · SÖZOPLY FİNAL SONUCU`
+              : 'SÖZOPLY FİNAL SONUCU'}
           </div>
           <h2
             id="victory-banner-title"
             className="font-display text-2xl md:text-4xl font-black tracking-tight"
           >
-            İSTANBUL&apos;UN EMLAK KRALI / EMLAK KRALİÇESİ BELLİ OLDU!
+            İSTANBUL&apos;UN SÖZOPLY ŞAMPİYONU BELLİ OLDU!
           </h2>
           <div className="pt-1 flex items-center justify-center gap-2.5 text-lg md:text-2xl font-extrabold text-[#fff6c2]">
             <Trophy className="h-7 w-7 text-[#ffe46b]" />
             <span>
-              Şampiyon: {champion.name} ({champion.realEstateCount} Gayrimenkul)
+              Şampiyon: {champion.name} ({champion.realEstateCount} İlçe)
             </span>
           </div>
           <div className="inline-flex items-center gap-1.5 rounded-xl bg-white/15 px-3.5 py-1 text-xs font-bold text-white">
             <Plane className="h-4 w-4" />
-            <span>Şampiyonluk uçağı İstanbul gökyüzünde &quot;{champion.name}&quot; flamasını dalgalandırıyor!</span>
+            <span>Şampiyonluk uçağı İstanbul gökyüzünde &quot;{champion.name}&quot; bayrağını dalgalandırıyor!</span>
           </div>
         </div>
 
@@ -366,7 +344,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
                     <div className="grid grid-cols-2 gap-2 pt-1 font-mono-num text-xs">
                       <div className="rounded-xl bg-[#e8f8ef] border border-[#a8dec0] p-2.5 text-center">
                         <div className="text-[10px] font-sans font-extrabold uppercase text-[#146c43]">
-                          Gayrimenkul
+                          İlçe Sayısı
                         </div>
                         <div className="text-2xl font-black text-[#0f4c2f]">
                           {team.realEstateCount}
@@ -374,7 +352,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
                       </div>
                       <div className="rounded-xl bg-[#eef6fb] border border-[#c1dff0] p-2.5 text-center">
                         <div className="text-[10px] font-sans font-extrabold uppercase text-[#0c6b9a]">
-                          Kasa BP
+                          Kasa TL
                         </div>
                         <div className="text-2xl font-black text-[#0f2942]">{team.bp}</div>
                       </div>
@@ -407,7 +385,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
           </div>
 
           <div className="text-center text-xs font-bold text-[#526d85]">
-            Sıralama Ölçütü: 1) En Çok Gayrimenkul · 2) Doğru Soru Sayısı · 3) Kasa BP Puanı
+            Sıralama: 1) En Çok İlçe · 2) Doğru Soru Sayısı · 3) Kasa TL
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
@@ -474,7 +452,7 @@ interface DiceResultBannerProps {
 }
 
 export const DiceResultBanner: React.FC<DiceResultBannerProps> = ({ diceValue, team }) => {
-  const charName = CHARACTER_OPTIONS.find((c) => c.id === team.characterId)?.name ?? 'Etken';
+  const charName = CHARACTER_OPTIONS.find((c) => c.id === team.characterId)?.name ?? 'Benzetme';
   const pips = DIE_PIPS[diceValue] ?? DIE_PIPS[1];
 
   return (
@@ -523,7 +501,7 @@ export const DiceResultBanner: React.FC<DiceResultBannerProps> = ({ diceValue, t
             </span>
           </div>
           <div className="mt-1 text-xs font-bold text-[#35556e]">
-            <strong>{charName}</strong> ({team.name}) FPS kamerayla ilerliyor...
+            <strong>{charName}</strong> ({team.name}) tahtada ilerliyor...
           </div>
         </div>
       </div>
@@ -543,7 +521,7 @@ export const FpsCameraHudBadge: React.FC<FpsCameraHudBadgeProps> = ({
   currentStep,
   totalSteps,
 }) => {
-  const charName = CHARACTER_OPTIONS.find((c) => c.id === team.characterId)?.name ?? 'Etken';
+  const charName = CHARACTER_OPTIONS.find((c) => c.id === team.characterId)?.name ?? 'Benzetme';
   const shownStep = Math.min(totalSteps, currentStep + 1);
   const progressPct = Math.min(100, Math.round((shownStep / Math.max(1, totalSteps)) * 100));
 
@@ -568,7 +546,7 @@ export const FpsCameraHudBadge: React.FC<FpsCameraHudBadgeProps> = ({
         </span>
         <div className="min-w-[160px]">
           <div className="flex items-center justify-between gap-3 text-xs font-extrabold text-white">
-            <span>FPS KAMERA · {charName}</span>
+            <span>KARAKTER GÖZÜNDEN · {charName}</span>
             <span className="font-mono-num text-[#ffd678]">
               Adım {shownStep}/{totalSteps}
             </span>
@@ -615,21 +593,21 @@ export const JailDecisionModal: React.FC<JailDecisionModalProps> = ({
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 shrink-0">
             <ShieldAlert className="h-6 w-6 text-[#ffd166]" />
           </span>
-          <div>
+            <div>
             <div className="text-xs font-extrabold uppercase tracking-wider text-[#cbd5e1]">
               {tileName} · {team.name}
             </div>
             <h2 id="jail-decision-title" className="font-display text-2xl font-extrabold">
-              Hapis Karesine Geldiniz!
+              Bekleme Karesine Geldin!
             </h2>
           </div>
         </div>
 
         <div className="p-6 space-y-4">
           <p className="text-sm md:text-base font-bold text-[#1e293b] leading-relaxed">
-            Hapisten hemen çıkıp bu eldeki Türkçe sorusunu çözmek için{' '}
-            <span className="font-mono-num font-black text-[#b91c1c]">{JAIL_BAIL_BP} BP</span>{' '}
-            ödeyebilirsiniz. Ödemezseniz bu el soru çözmeden <span className="font-black">1 tur beklersiniz</span>.
+            Hemen devam edip bu turdaki Türkçe sorusunu çözmek için{' '}
+            <span className="font-mono-num font-black text-[#b91c1c]">{JAIL_BAIL_BP} TL</span>{' '}
+            ödeyebilirsin. Ödemezsen bu tur soru çözmeden <span className="font-black">1 tur beklersin</span>.
           </p>
 
           <div className="rounded-xl bg-[#f4efe4] border border-[#ded3be] px-4 py-3 flex items-center justify-between text-sm">
@@ -639,7 +617,7 @@ export const JailDecisionModal: React.FC<JailDecisionModalProps> = ({
                 canPay ? 'text-[#147a4b]' : 'text-[#c42d2d]'
               }`}
             >
-              {team.bp} BP
+              {team.bp} TL
             </span>
           </div>
 
@@ -656,8 +634,8 @@ export const JailDecisionModal: React.FC<JailDecisionModalProps> = ({
             >
               <Coins className="h-4 w-4" />
               {canPay
-                ? `${JAIL_BAIL_BP} BP Öde ve Soruya Devam Et`
-                : `Yetersiz Bakiye (${JAIL_BAIL_BP} BP Gerekli)`}
+                ? `${JAIL_BAIL_BP} TL Öde ve Soruyu Çöz`
+                : `Yetersiz Para (${JAIL_BAIL_BP} TL Gerekli)`}
             </button>
 
             <button
@@ -665,7 +643,7 @@ export const JailDecisionModal: React.FC<JailDecisionModalProps> = ({
               onClick={onWaitTurn}
               className="w-full rounded-xl border-2 border-[#64748b] bg-white hover:bg-[#f1f5f9] px-5 py-3 text-sm font-extrabold text-[#334155] cursor-pointer"
             >
-              Ödeme (Soru Çözme · 1 Tur Bekle)
+              Ödeme (1 Tur Bekle)
             </button>
           </div>
         </div>

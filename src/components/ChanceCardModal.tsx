@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, ArrowRight, Gift, Percent, Sparkles } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Gift, Sparkles, Tag } from 'lucide-react';
 import { ChanceCard, Team } from '../game/types';
 
 interface ChanceCardModalProps {
@@ -22,19 +22,19 @@ export const ChanceCardModal: React.FC<ChanceCardModalProps> = ({
     ? 'border-[#c82828]'
     : isDiscount
       ? 'border-[#0d9475]'
-      : 'border-[#d98a0b]';
+      : 'border-[#d81b75]';
 
   const headerBgClass = isPenalty
     ? 'bg-[#c82828]'
     : isDiscount
       ? 'bg-[#0d9475]'
-      : 'bg-[#d98a0b]';
+      : 'bg-[#d81b75]';
 
   const badgeText = isPenalty
-    ? 'SÜRPRİZ CEZA KARTI'
+    ? 'ÖDÜL YA DA CEZA · CEZA ÇIKTI!'
     : isDiscount
-      ? 'İNDİRİM KARTI'
-      : 'BONUS KARTI';
+      ? 'ÖDÜL YA DA CEZA · İNDİRİM!'
+      : 'ÖDÜL YA DA CEZA · ÖDÜL ÇIKTI!';
 
   return (
     <div
@@ -53,7 +53,7 @@ export const ChanceCardModal: React.FC<ChanceCardModalProps> = ({
             {isPenalty ? (
               <AlertTriangle className="h-6 w-6" />
             ) : isDiscount ? (
-              <Percent className="h-6 w-6" />
+              <Tag className="h-6 w-6" />
             ) : (
               <Gift className="h-6 w-6" />
             )}
@@ -75,7 +75,7 @@ export const ChanceCardModal: React.FC<ChanceCardModalProps> = ({
                 ? 'border-[#f0b4b4] bg-[#fff2f2]'
                 : isDiscount
                   ? 'border-[#b3e5d7] bg-[#f2fbf8]'
-                  : 'border-[#e5dac6] bg-white'
+                  : 'border-[#f2c4da] bg-white'
             }`}
           >
             <p className="text-base font-bold text-[#0f2942] leading-relaxed">
@@ -92,15 +92,15 @@ export const ChanceCardModal: React.FC<ChanceCardModalProps> = ({
                   ? 'bg-[#c82828] hover:bg-[#a61d1d]'
                   : isDiscount
                     ? 'bg-[#0d9475] hover:bg-[#09735b]'
-                    : 'bg-[#0c6b9a] hover:bg-[#095378]'
+                    : 'bg-[#d81b75] hover:bg-[#b51460]'
               }`}
             >
               {isPenalty ? <AlertTriangle className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
               {isPenalty
-                ? `Cezayı Onayla (-${card.value ?? 25} BP)`
+                ? `Cezayı Öde (-${card.value ?? 25} TL)`
                 : isDiscount
-                  ? 'İndirimi Uygula'
-                  : 'Bonus Kartını Uygula'}
+                  ? `${card.value ?? 25} TL İndirimi Kullan`
+                  : 'Ödülü Al'}
             </button>
 
             {isDiscount && onSkipDiscount && (
@@ -109,7 +109,7 @@ export const ChanceCardModal: React.FC<ChanceCardModalProps> = ({
                 onClick={onSkipDiscount}
                 className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-[#c7d5e0] bg-white hover:bg-[#f2f6f9] px-5 py-2.5 text-sm font-extrabold text-[#36536b] cursor-pointer"
               >
-                Direkt Geç (İndirimsiz Devam Et)
+                İndirimsiz Devam Et
                 <ArrowRight className="h-4 w-4" />
               </button>
             )}

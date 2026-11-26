@@ -193,13 +193,13 @@ export function createInitialGameState(
       {
         id: 'fin-init',
         turn: 1,
-        summary: `Her takım ${INITIAL_TEAM_BP} BP başlangıç sermayesi ile BAŞLANGIÇ noktasından oyuna başladı.`,
+        summary: `Her takım ${INITIAL_TEAM_BP} TL ile BAŞLANGIÇ karesinden SÖZOPLY oyununa başladı.`,
       },
     ],
     specialToast: null,
     remainingSeconds: TOTAL_GAME_SECONDS,
     timerPaused: false,
-    bannerMessage: `${teams[0].name} (${INITIAL_TEAM_BP} BP · BAŞLANGIÇ) sırasına başladı. Zar atarak İstanbul turuna çıkın!`,
+    bannerMessage: `${teams[0].name} (${INITIAL_TEAM_BP} TL · BAŞLANGIÇ) başlıyor! Zar atarak İstanbul turuna çık.`,
     lastQuestionOutcome: null,
   };
 }
@@ -235,7 +235,7 @@ export function finishGameOnAllQuestionsCompleted(state: GameState): GameState {
     activeChanceCardId: null,
     pendingPropertyDrawAfterBonus: false,
     lastQuestionOutcome: null,
-    bannerMessage: `Tüm ${QUESTION_CARDS.length} soru tamamlandı! Oyun sona erdi — Şampiyon: ${champion?.name ?? 'Şampiyon'}!`,
+    bannerMessage: `Tüm ${QUESTION_CARDS.length} soru bitti! SÖZOPLY şampiyonu: ${champion?.name ?? 'Şampiyon'}!`,
   };
 }
 
@@ -271,7 +271,7 @@ export function getAssetOwnerTeam(state: GameState, assetId: string): Team | nul
 export function computeEffectiveAssetPrice(team: Team, asset: PropertyAsset): number {
   let price = asset.price;
   if (team.nextPropertyDiscount > 0) {
-    price = Math.round(price * (1 - team.nextPropertyDiscount));
+    price = Math.round(price - team.nextPropertyDiscount);
   }
   return Math.max(10, price);
 }
@@ -326,31 +326,31 @@ export function resolveDiceRoll(
   let toast: GameState['specialToast'] = null;
   let logNotes: string[] = [];
 
-  // 1. Start Point (+50 BP) when completing a lap (never on initial departure from 0)
+  // 1. Start Point (+50 TL) when completing a lap (never on initial departure from 0)
   if (passedOrLandedStart) {
     bonusBp += START_PASS_BONUS_BP;
     toast = {
       id: ++toastSeq,
       kind: 'start_bonus',
-      title: 'BAŞLANGIÇ TURU +50 BP!',
-      subtitle: `${team.name} başlangıç noktasına döndü ve +50 BP kazandı!`,
+      title: 'BAŞLANGIÇ TURU +50 TL!',
+      subtitle: `${team.name} başlangıca geri döndü ve +50 TL kazandı!`,
     };
-    logNotes.push(`${team.name} BAŞLANGIÇ turu ödülü aldı (+50 BP).`);
+    logNotes.push(`${team.name} BAŞLANGIÇ turu ödülü aldı (+50 TL).`);
   }
 
-  // 2. Reward Tile (+10 BP) — separate from +50 BP start bonus
+  // 2. Reward Tile (+10 TL) — separate from +50 TL start bonus
   if (landedTile.type === 'reward') {
     bonusBp += REWARD_TILE_BP;
     toast = {
       id: ++toastSeq,
       kind: 'reward',
-      title: passedOrLandedStart ? 'BAŞLANGIÇ +50 BP & ÖDÜL +10 BP!' : 'ÖDÜL KARESİ +10 BP!',
-      subtitle: `${team.name} ödül karesinden +10 BP kazandı!`,
+      title: passedOrLandedStart ? 'BAŞLANGIÇ +50 TL & ÖDÜL +10 TL!' : 'ÖDÜL KARESİ +10 TL!',
+      subtitle: `${team.name} ödül karesinden +10 TL kazandı!`,
     };
-    logNotes.push(`${team.name} ÖDÜL karesinden +10 BP kazandı.`);
+    logNotes.push(`${team.name} ÖDÜL karesinden +10 TL kazandı.`);
   }
 
-  // 3. Jail / Wait Tile -> Player decides: Pay 50 BP bail OR skip question & wait 1 turn!
+  // 3. Wait Tile -> Player decides: Pay 50 TL OR skip question & wait 1 turn!
   const updatedTeams = state.teams.map((t, idx) =>
     idx === state.activeTeamIndex
       ? {
@@ -372,12 +372,12 @@ export function resolveDiceRoll(
     toast = {
       id: ++toastSeq,
       kind: 'jail',
-      title: 'HAPİS ALANINA GİRDİNİZ!',
-      subtitle: `${team.name}: ${JAIL_BAIL_BP} BP ödeyerek hemen devam edin veya ödemeyip 1 tur bekleyin (soru çözülmez).`,
+      title: 'BEKLEME KARESİNE GELDİN!',
+      subtitle: `${team.name}: ${JAIL_BAIL_BP} TL verip hemen devam edebilir veya 1 tur bekleyebilirsin.`,
     };
     nextFinanceLog = pushFinanceLog(
       { ...state, financeLog: nextFinanceLog },
-      `${team.name} HAPİS alanına geldi (50 BP kefalet veya 1 tur bekleme seçimi).`
+      `${team.name} BEKLEME karesine geldi (${JAIL_BAIL_BP} TL veya 1 tur bekleme seçimi).`
     );
     return {
       ...state,
@@ -390,7 +390,7 @@ export function resolveDiceRoll(
       lastQuestionOutcome: null,
       specialToast: toast,
       financeLog: nextFinanceLog,
-      bannerMessage: `${team.name} HAPİS karesinde! ${JAIL_BAIL_BP} BP ödeyebilir veya 1 tur soru çözmeden bekleyebilirsiniz.`,
+      bannerMessage: `${team.name} bekleme karesinde! ${JAIL_BAIL_BP} TL verip devam edebilir veya 1 tur bekleyebilirsin.`,
     };
   }
 
@@ -403,14 +403,14 @@ export function resolveDiceRoll(
       ...state,
       teams: updatedTeams,
       lastDiceValue: clampedDice,
-      turnPhase: 'drawing_chance_card',
+      turnPhase: 'ready_to_draw_chance',
       activeChanceCardId: chosenChance.id,
       activeQuestionNumber: null,
       pendingPropertyDrawAfterBonus: false,
       lastQuestionOutcome: null,
       specialToast: toast,
       financeLog: nextFinanceLog,
-      bannerMessage: `${team.name}, ${landedTile.name} karesine geldi (soru kotası tamamlandı). Bonus & İndirim kartı açılıyor!`,
+      bannerMessage: `${team.name}, ${landedTile.name} karesine geldi! Ortadaki ÖDÜL YA DA CEZA destesinden kart çekebilirsin!`,
     };
   }
 
@@ -419,8 +419,8 @@ export function resolveDiceRoll(
     landedTile.type === 'question'
       ? `SORU KARTI karesine geldi! `
       : landedTile.type === 'reward'
-        ? `ÖDÜL karesinden +10 BP aldı! `
-        : `${landedTile.name} lokasyonuna ulaştı! `;
+        ? `ÖDÜL karesinden +10 TL aldı! `
+        : `${landedTile.name} durağına ulaştı! `;
 
   return {
     ...state,
@@ -433,14 +433,14 @@ export function resolveDiceRoll(
     lastQuestionOutcome: null,
     specialToast: toast,
     financeLog: nextFinanceLog,
-    bannerMessage: `${team.name} ${tilePrefix}Ortadaki SORU KARTLARI destesinden Soru ${nextCardNumber} kartını çekin!`,
+    bannerMessage: `${team.name} ${tilePrefix}Ortadaki SORU KARTLARI destesinden Soru ${nextCardNumber} kartını çek!`,
   };
 }
 
 /**
  * Resolve Jail Decision:
- * - action === 'pay': Deduct 50 BP (requires team.bp >= 50), clear jail, proceed to question card!
- * - action === 'wait': No BP deducted, set jailTurnsRemaining = 1, DO NOT solve a question this turn, wait 1 turn!
+ * - action === 'pay': Deduct JAIL_BAIL_BP (10 TL, requires team.bp >= 10), clear jail, proceed to question card!
+ * - action === 'wait': No TL deducted, set jailTurnsRemaining = 1, DO NOT solve a question this turn, wait 1 turn!
  */
 export function resolveJailDecision(
   state: GameState,
@@ -468,17 +468,17 @@ export function resolveJailDecision(
       activeQuestionNumber: nextCardNumber,
       specialToast: {
         id: ++toastSeq,
-        kind: 'bank',
-        title: `HAPİS KEFALETİ ÖDENDİ (-${JAIL_BAIL_BP} BP)`,
-        subtitle: `${team.name} ${JAIL_BAIL_BP} BP ödedi ve turuna kesintisiz devam ediyor!`,
+        kind: 'info',
+        title: `BEKLEMEDEN ÇIKTIN (-${JAIL_BAIL_BP} TL)`,
+        subtitle: `${team.name} ${JAIL_BAIL_BP} TL verdi ve oyununa hemen devam ediyor!`,
       },
       financeLog: pushFinanceLog(
         state,
-        `${team.name} hapisten çıkmak için ${JAIL_BAIL_BP} BP ödedi.`
+        `${team.name} bekleme karesinden çıkmak için ${JAIL_BAIL_BP} TL ödedi.`
       ),
       bannerMessage: canDrawQuestion
-        ? `${team.name} ${JAIL_BAIL_BP} BP ödedi! Şimdi Soru ${nextCardNumber} kartını çekebilirsiniz.`
-        : `${team.name} ${JAIL_BAIL_BP} BP ödedi ve hapisten çıktı.`,
+        ? `${team.name} ${JAIL_BAIL_BP} TL ödedi! Şimdi Soru ${nextCardNumber} kartını çekebilirsin.`
+        : `${team.name} ${JAIL_BAIL_BP} TL ödedi ve devam ediyor.`,
     };
   }
 
@@ -497,14 +497,14 @@ export function resolveJailDecision(
     specialToast: {
       id: ++toastSeq,
       kind: 'jail',
-      title: 'HAPİS: 1 TUR BEKLEME',
-      subtitle: `${team.name} 50 BP ödemedi; bu tur soru çözmeyecek ve 1 tur bekleyecek.`,
+      title: 'MOLA: 1 TUR BEKLEME',
+      subtitle: `${team.name} ${JAIL_BAIL_BP} TL ödemedi; bu tur soru çözmeyecek ve 1 tur bekleyecek.`,
     },
     financeLog: pushFinanceLog(
       state,
-      `${team.name} hapis kefaletini ödemedi; 1 tur soru çözmeden bekleyecek.`
+      `${team.name} ${JAIL_BAIL_BP} TL ödemedi; 1 tur soru çözmeden bekleyecek.`
     ),
-    bannerMessage: `${team.name} 50 BP ödemedi (soru çözmeden 1 tur bekleyecek). Sırayı sonraki takıma geçirin.`,
+    bannerMessage: `${team.name} 1 tur beklemeyi seçti. Sırayı sonraki takıma geçebilirsin.`,
   };
 }
 
@@ -568,8 +568,8 @@ export function submitQuestionAnswer(
   const bonusCard = isCorrect ? pickChanceCard() : null;
 
   const bannerMessage = isCorrect
-    ? `Doğru cevap! +${CORRECT_ANSWER_BP} BP kazandınız. İsterseniz Bonus / İndirim Kartı çekebilir veya direkt geçebilirsiniz!`
-    : `Yanlış cevap (${WRONG_ANSWER_BP} BP). Doğru seçenek ${officialCorrect} şıkkıydı (yanlış cevapta bonus kartı verilmez).`;
+    ? `Harika! Doğru cevap (+${CORRECT_ANSWER_BP} TL). İstersen Ödül ya da Ceza Kartı çekebilir veya direkt geçebilirsin!`
+    : `Yanlış cevap (${WRONG_ANSWER_BP} TL). Doğru cevap ${officialCorrect} şıkkıydı.`;
 
   return {
     ...state,
@@ -590,8 +590,8 @@ export function submitQuestionAnswer(
     financeLog: pushFinanceLog(
       state,
       isCorrect
-        ? `${team.name} Soru ${questionNumber} doğru bildi (+${CORRECT_ANSWER_BP} BP).`
-        : `${team.name} Soru ${questionNumber} yanlış yanıtladı (${WRONG_ANSWER_BP} BP).`
+        ? `${team.name} Soru ${questionNumber} doğru bildi (+${CORRECT_ANSWER_BP} TL).`
+        : `${team.name} Soru ${questionNumber} yanlış yanıtladı (${WRONG_ANSWER_BP} TL).`
     ),
     bannerMessage,
   };
@@ -657,9 +657,9 @@ export function timeoutQuestion(state: GameState, questionNumber: number): GameS
     },
     financeLog: pushFinanceLog(
       state,
-      `${team.name} Soru ${questionNumber} için ${QUESTION_TIME_LIMIT_SECONDS} saniye içinde yanıt veremedi (${WRONG_ANSWER_BP} BP).`
+      `${team.name} Soru ${questionNumber} için süre içinde yanıt veremedi (${WRONG_ANSWER_BP} TL).`
     ),
-    bannerMessage: `Süre doldu (${QUESTION_TIME_LIMIT_SECONDS} sn)! ${WRONG_ANSWER_BP} BP kesildi. Doğru seçenek ${officialCorrect} şıkkıydı.`,
+    bannerMessage: `Süre doldu (${QUESTION_TIME_LIMIT_SECONDS} sn)! ${WRONG_ANSWER_BP} TL eksildi. Doğru cevap ${officialCorrect} şıkkıydı.`,
   };
 }
 
@@ -705,9 +705,9 @@ export function skipBonusCardAfterQuestion(state: GameState): GameState {
     bannerMessage:
       nextPhase === 'ready_to_draw_property'
         ? allDone
-          ? `${team.name} son soruyu doğru bildi! İsterseniz son EMLAK KARTI hakkınızı kullanabilir veya oyunu bitirebilirsiniz.`
-          : `${team.name} bonus/indirim kartını pas geçti. İsterseniz EMLAK KARTI çekebilir veya sırayı geçebilirsiniz.`
-        : `${team.name} bonus/indirim kartını pas geçti. Sırayı sonraki takıma geçirebilirsiniz.`,
+          ? `${team.name} son soruyu doğru bildi! İstersen son İLÇE KARTI hakkını kullanabilir veya oyunu bitirebilirsin.`
+          : `${team.name} Ödül ya da Ceza kartını pas geçti. Şimdi İLÇE KARTI çekebilir veya sırayı geçebilirsin.`
+        : `${team.name} Ödül ya da Ceza kartını pas geçti. Sırayı sonraki takıma geçebilirsin.`,
   };
 
   if (nextPhase === 'turn_complete' && allDone) {
@@ -724,7 +724,7 @@ export function drawPropertyCard(state: GameState, seed?: number): GameState {
       ...state,
       turnPhase: 'turn_complete',
       activePropertyAssetId: null,
-      bannerMessage: 'İstanbul piyasasındaki tüm gayrimenkuller satın alındı!',
+      bannerMessage: 'İstanbul’daki tüm ilçe kartları alındı!',
     };
     return areAllQuestionsCompleted(emptyState)
       ? finishGameOnAllQuestionsCompleted(emptyState)
@@ -739,7 +739,7 @@ export function drawPropertyCard(state: GameState, seed?: number): GameState {
     ...state,
     turnPhase: 'viewing_property_card',
     activePropertyAssetId: chosen.id,
-    bannerMessage: `${chosen.name} kartı açıldı! BP puanınız yeterliyse satın alabilir veya Banka kredisi kullanabilirsiniz.`,
+    bannerMessage: `${chosen.name} kartı açıldı! Paran yetiyorsa bu ilçeyi hemen alabilirsin.`,
   };
 }
 
@@ -753,7 +753,7 @@ export function purchaseActiveProperty(state: GameState): GameState {
       ...state,
       activePropertyAssetId: null,
       turnPhase: 'turn_complete',
-      bannerMessage: `${asset.name} zaten başka bir takımın mülkiyetinde.`,
+      bannerMessage: `${asset.name} zaten başka bir takımda.`,
     };
   }
 
@@ -763,7 +763,7 @@ export function purchaseActiveProperty(state: GameState): GameState {
   if (team.bp < price) {
     return {
       ...state,
-      bannerMessage: `${team.name} bakiyesi (${team.bp} BP) ${asset.name} (${price} BP) için yetersiz. Banka kredisi veya takım borcu kullanabilirsiniz!`,
+      bannerMessage: `${team.name} parası (${team.bp} TL) ${asset.name} (${price} TL) için henüz yeterli değil.`,
     };
   }
 
@@ -786,14 +786,14 @@ export function purchaseActiveProperty(state: GameState): GameState {
     specialToast: {
       id: ++toastSeq,
       kind: 'purchase',
-      title: `${asset.name} SATIN ALINDI!`,
-      subtitle: `${team.name} ${price} BP ödeyerek tapuyu envanterine ekledi.`,
+      title: `${asset.name} ALINDI!`,
+      subtitle: `${team.name} ${price} TL ödeyerek bu ilçeyi takımına ekledi!`,
     },
     financeLog: pushFinanceLog(
       state,
-      `${team.name}, ${asset.name} (${asset.kind === 'emlak' ? 'Gayrimenkul' : 'Araç'}) satın aldı (-${price} BP).`
+      `${team.name}, ${asset.name} kartını aldı (-${price} TL).`
     ),
-    bannerMessage: `${team.name}, ${asset.name} varlığını ${price} BP ile satın aldı!`,
+    bannerMessage: `Tebrikler! ${team.name}, ${asset.name} kartını ${price} TL ile aldı!`,
   };
 
   if (areAllQuestionsCompleted(nextState)) {
@@ -808,7 +808,7 @@ export function skipActiveProperty(state: GameState): GameState {
     ...state,
     activePropertyAssetId: null,
     turnPhase: 'turn_complete',
-    bannerMessage: `${team.name} satın alma hakkını pas geçti.`,
+    bannerMessage: `${team.name} ilçe almayı pas geçti.`,
   };
   if (areAllQuestionsCompleted(nextState)) {
     return finishGameOnAllQuestionsCompleted(nextState);
@@ -842,15 +842,15 @@ export function applyActiveChanceCard(state: GameState): GameState {
         }
       }
       msg = allDone
-        ? `Vapur Seferi! Tüm sorular tamamlandığı için oyun sona eriyor.`
-        : `Vapur Seferi! ${team.name} ekstra zar hakkı kazandı!`;
+        ? `Vapur Gezisi! Tüm sorular bittiği için oyun sona eriyor.`
+        : `Vapur Gezisi! ${team.name} bir kez daha zar atma hakkı kazandı!`;
       break;
     }
     case 'skip_turn': {
       updatedTeams = state.teams.map((t, idx) =>
         idx === state.activeTeamIndex ? { ...t, jailTurnsRemaining: 1 } : t
       );
-      msg = `Boğaz Trafiği! ${team.name} bir sonraki hareket turunda 1 el bekleyecek.`;
+      msg = `Boğaz Trafiği! ${team.name} bir sonraki turda 1 el bekleyecek.`;
       break;
     }
     case 'gain_bp': {
@@ -858,7 +858,7 @@ export function applyActiveChanceCard(state: GameState): GameState {
       updatedTeams = state.teams.map((t, idx) =>
         idx === state.activeTeamIndex ? { ...t, bp: t.bp + bonus } : t
       );
-      msg = `${card.title}: ${team.name} +${bonus} BP bonus kazandı!`;
+      msg = `${card.title}: ${team.name} +${bonus} TL ödül kazandı!`;
       break;
     }
     case 'lose_bp': {
@@ -866,26 +866,26 @@ export function applyActiveChanceCard(state: GameState): GameState {
       updatedTeams = state.teams.map((t, idx) =>
         idx === state.activeTeamIndex ? { ...t, bp: Math.max(0, t.bp - penalty) } : t
       );
-      msg = `${card.title}: ${team.name} kasasından -${penalty} BP ödendi.`;
+      msg = `${card.title}: ${team.name} takımından -${penalty} TL eksildi.`;
       break;
     }
     case 'property_discount': {
-      const disc = card.value ?? 0.25;
+      const discTl = card.value ?? 25;
       updatedTeams = state.teams.map((t, idx) =>
-        idx === state.activeTeamIndex ? { ...t, nextPropertyDiscount: disc } : t
+        idx === state.activeTeamIndex ? { ...t, nextPropertyDiscount: discTl } : t
       );
-      msg = `${card.title}! ${team.name} bir sonraki emlak alımında %${Math.round(disc * 100)} indirim kazandı.`;
+      msg = `${card.title}! ${team.name} bir sonraki ilçe alımında ${discTl} TL indirim kazandı.`;
       break;
     }
     case 'bonus_property_draw': {
       if (availableAssets.length > 0) {
         nextPhase = 'ready_to_draw_property';
-        msg = `${card.title}! ${team.name}, EMLAK KARTLARI destesinden hemen kart çekebilir!`;
+        msg = `${card.title}! ${team.name}, İLÇE KARTLARI destesinden hemen kart çekebilir!`;
       } else {
         updatedTeams = state.teams.map((t, idx) =>
           idx === state.activeTeamIndex ? { ...t, bp: t.bp + 30 } : t
         );
-        msg = `${card.title}! Tüm mülkler alındığı için +30 BP bonus eklendi.`;
+        msg = `${card.title}! Tüm ilçeler alındığı için +30 TL ödül eklendi.`;
       }
       break;
     }
@@ -901,8 +901,8 @@ export function applyActiveChanceCard(state: GameState): GameState {
     bannerMessage:
       nextPhase === 'ready_to_draw_property'
         ? allDone
-          ? `${msg} Son EMLAK KARTI hakkınızı kullanabilir veya oyunu bitirebilirsiniz!`
-          : `${msg} Şimdi EMLAK KARTLARI destesinden tapu kartı çekebilirsiniz!`
+          ? `${msg} Son İLÇE KARTI hakkını kullanabilir veya oyunu bitirebilirsin!`
+          : `${msg} Şimdi İLÇE KARTLARI destesinden yeni bir ilçe çekebilirsin!`
         : msg,
   };
 
@@ -1186,11 +1186,10 @@ export function advanceToNextTeam(state: GameState): GameState {
       specialToast: {
         id: ++toastSeq,
         kind: 'jail',
-        title: `${incoming.name} HAPİS CEZASI BEKLEME TURU`,
-        subtitle:
-          '50 BP ödenmediği için bu tur zar atılmaz ve soru çözülmez. Gelecek tur normale döner!',
+        title: `${incoming.name} BEKLEME TURUNDA`,
+        subtitle: `${JAIL_BAIL_BP} TL ödenmediği için bu tur zar atılmaz ve soru çözülmez. Bir sonraki tur devam eder!`,
       },
-      bannerMessage: `${incoming.name} bekleme turunda (soru çözmeden 1 tur bekliyor). Sonraki takıma geçebilirsiniz.`,
+      bannerMessage: `${incoming.name} mola turunda (1 tur bekliyor). Sırayı sonraki takıma geçebilirsin.`,
     };
   }
 
@@ -1204,7 +1203,7 @@ export function advanceToNextTeam(state: GameState): GameState {
     activeChanceCardId: null,
     pendingPropertyDrawAfterBonus: false,
     lastQuestionOutcome: null,
-    bannerMessage: `Sıra ${incoming.name} takımında. Zar atarak İstanbul parkurunda ilerleyin!`,
+    bannerMessage: `Sıra ${incoming.name} takımında! Zar atarak İstanbul turunda ilerle.`,
   };
 }
 

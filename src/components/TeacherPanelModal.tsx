@@ -180,7 +180,7 @@ export const TeacherPanelModal: React.FC<TeacherPanelModalProps> = ({
                       {team.name}
                     </span>
                     <span className="font-mono-num text-sm font-black text-[#0c6b9a]">
-                      {team.bp} BP
+                      {team.bp} TL
                     </span>
                   </div>
 
@@ -205,7 +205,7 @@ export const TeacherPanelModal: React.FC<TeacherPanelModalProps> = ({
                         className="inline-flex items-center gap-1 rounded-lg bg-[#d97706] hover:bg-[#b45309] px-2 py-1.5 text-[11px] font-extrabold text-white cursor-pointer"
                       >
                         <Unlock className="h-3 w-3" />
-                        Hapisten Çıkar
+                        Beklemeyi Kaldır
                       </button>
                     )}
                   </div>

@@ -10,18 +10,18 @@ import {
 
 export const TOTAL_GAME_SECONDS = 25 * 60; // 25 dakika
 export const FINAL_PHASE_THRESHOLD_SECONDS = 5 * 60; // Son 5 dakika
-export const INITIAL_TEAM_BP = 100; // Her takım tam 100 BP ile başlar
-export const START_PASS_BONUS_BP = 50; // Başlangıca her dönüşte +50 BP
-export const REWARD_TILE_BP = 10; // Ödül karesinde +10 BP
-export const JAIL_BAIL_BP = 50; // Hapisten hemen çıkma bedeli: 50 BP
-export const QUESTION_TIME_LIMIT_SECONDS = 60; // Her soru için 1 dakika (60 saniye) süre
-export const CORRECT_ANSWER_BP = 50; // Her doğru soru +50 BP
+export const INITIAL_TEAM_BP = 100; // Her takım tam 100 TL ile başlar
+export const START_PASS_BONUS_BP = 50; // Başlangıca her dönüşte +50 TL
+export const REWARD_TILE_BP = 10; // Ödül karesinde +10 TL
+export const JAIL_BAIL_BP = 10; // Hapis / Bekleme karesinden çıkıp soru çözme ücreti: 10 TL
+export const QUESTION_TIME_LIMIT_SECONDS = 120; // Her soru için 2 dakika (120 saniye) süre
+export const CORRECT_ANSWER_BP = 50; // Her doğru soru +50 TL
 export const WRONG_ANSWER_BP = -25;
 export const BANK_LOAN_PRINCIPAL = 50;
 export const BANK_LOAN_REPAYMENT = 60;
-export const BANK_BUYBACK_RATIO = 0.7; // Bankaya satışta %70
-export const MAX_PEER_LOAN_RATIO = 1.2; // En fazla %120 geri ödeme
-export const QUESTIONS_PER_TEAM = 5; // 15 soruluk havuz 3 takım arasında eşit oynanır (takım başı 5)
+export const BANK_BUYBACK_RATIO = 0.7;
+export const MAX_PEER_LOAN_RATIO = 1.2;
+export const QUESTIONS_PER_TEAM = 7; // 20 soruluk havuz 3 takım arasında oynanır (7 + 7 + 6 = 20)
 
 export const PAWN_COLORS: PawnColorOption[] = [
   { id: 'mavi', name: 'Boğaz Mavisi', hex: '#1464d6', darkHex: '#0d4599' },
@@ -35,28 +35,22 @@ export const PAWN_COLORS: PawnColorOption[] = [
 export const CHARACTER_OPTIONS: CharacterOption[] = [
   {
     id: 'etken',
-    name: 'Etken',
-    role: 'Turuncu saçlı, beyaz tenli kız öğrenci',
-    accentHex: '#f07427',
+    name: 'Benzetme',
+    role: 'Cesur Aslan Maskotu',
+    accentHex: '#d97706',
   },
   {
     id: 'edilgen',
-    name: 'Edilgen',
-    role: 'Siyah kısa saçlı erkek öğrenci',
-    accentHex: '#1d6fd1',
-  },
-  {
-    id: 'donuslu',
-    name: 'Dönüşlü',
-    role: 'Siyah uzun saçlı kız öğrenci',
-    accentHex: '#1e9363',
+    name: 'Kişileştirme',
+    role: 'Neşeli Bulut Maskotu',
+    accentHex: '#0284c7',
   },
 ];
 
 export const DEFAULT_TEAMS_SETUP = [
   { name: 'Boğaz Kartalları', colorId: 'turuncu', characterId: 'etken' as const },
   { name: 'Galata Kâşifleri', colorId: 'mavi', characterId: 'edilgen' as const },
-  { name: 'Haliç Yıldızları', colorId: 'yesil', characterId: 'donuslu' as const },
+  { name: 'Haliç Yıldızları', colorId: 'yesil', characterId: 'etken' as const },
 ];
 
 /**
@@ -86,10 +80,10 @@ export const BOARD_TILES: BoardTile[] = [
     id: 'baslangic',
     name: 'BAŞLANGIÇ',
     shortLabel: 'BAŞLANGIÇ',
-    districtTag: 'Her Dönüş +50 BP',
+    districtTag: 'Her Dönüş +50 TL',
     accentColor: '#e23b26',
-    architectureNote: 'İstanbul şehir turunun başlangıç meydanı ve görkemli tak kapısı.',
-    historicalFact: 'İlk çıkışta puan verilmez; parkuru tamamlayıp her dönüşte +50 BP kazanılır.',
+    architectureNote: 'İstanbul oyun turumuzun başlangıç kapısı!',
+    historicalFact: 'İlk çıkışta para verilmez; tahtayı dolaşıp her dönüşte +50 TL kazanırsın.',
     boardPos: sidePos('south', 0),
     landmarkPos: [-13.4, 13.4],
     landmarkRotY: Math.PI * 0.25,
@@ -141,7 +135,7 @@ export const BOARD_TILES: BoardTile[] = [
     type: 'reward',
     id: 'odul-1',
     name: 'ÖDÜL',
-    shortLabel: 'ÖDÜL +10 BP',
+    shortLabel: 'ÖDÜL +10 TL',
     districtTag: 'Hediye Karesi',
     accentColor: '#e6a817',
     boardPos: sidePos('south', 4),
@@ -166,11 +160,11 @@ export const BOARD_TILES: BoardTile[] = [
     index: 6,
     type: 'jail',
     id: 'hapis-1',
-    name: 'HAPİS / BEKLE',
-    shortLabel: 'HAPİS · 1 TUR',
-    districtTag: 'Bekleme Alanı',
+    name: 'BEKLEME KARESİ',
+    shortLabel: 'BEKLE · 1 TUR',
+    districtTag: 'Mola Alanı',
     accentColor: '#52606d',
-    architectureNote: 'İstanbul Boğazı dinlenme ve bekleme iskelesi — burada 1 hareket turu beklenir.',
+    architectureNote: 'Boğaz kıyısında kısa bir mola! İstersen 10 TL verip hemen soruyu çöz, istersen 1 tur bekle.',
     boardPos: sidePos('south', 6),
     cameraFocusOffset: [16.5, 13.5, 19.5],
   },
@@ -222,7 +216,7 @@ export const BOARD_TILES: BoardTile[] = [
     type: 'reward',
     id: 'odul-2',
     name: 'ÖDÜL',
-    shortLabel: 'ÖDÜL +10 BP',
+    shortLabel: 'ÖDÜL +10 TL',
     districtTag: 'Hediye Karesi',
     accentColor: '#e6a817',
     boardPos: sidePos('east', 4),
@@ -249,9 +243,9 @@ export const BOARD_TILES: BoardTile[] = [
     index: 12,
     type: 'jail',
     id: 'hapis-2',
-    name: 'HAPİS / BEKLE',
-    shortLabel: 'HAPİS · 1 TUR',
-    districtTag: 'Bekleme Alanı',
+    name: 'BEKLEME KARESİ',
+    shortLabel: 'BEKLE · 1 TUR',
+    districtTag: 'Mola Alanı',
     accentColor: '#52606d',
     boardPos: sidePos('east', 6),
     cameraFocusOffset: [16.5, 13.5, -18.5],
@@ -302,7 +296,7 @@ export const BOARD_TILES: BoardTile[] = [
     type: 'reward',
     id: 'odul-3',
     name: 'ÖDÜL',
-    shortLabel: 'ÖDÜL +10 BP',
+    shortLabel: 'ÖDÜL +10 TL',
     districtTag: 'Hediye Karesi',
     accentColor: '#e6a817',
     boardPos: sidePos('north', 4),
@@ -327,9 +321,9 @@ export const BOARD_TILES: BoardTile[] = [
     index: 18,
     type: 'jail',
     id: 'hapis-3',
-    name: 'HAPİS / BEKLE',
-    shortLabel: 'HAPİS · 1 TUR',
-    districtTag: 'Bekleme Alanı',
+    name: 'BEKLEME KARESİ',
+    shortLabel: 'BEKLE · 1 TUR',
+    districtTag: 'Mola Alanı',
     accentColor: '#52606d',
     boardPos: sidePos('north', 6),
     cameraFocusOffset: [-16.5, 13.5, -18.5],
@@ -382,7 +376,7 @@ export const BOARD_TILES: BoardTile[] = [
     type: 'reward',
     id: 'odul-4',
     name: 'ÖDÜL',
-    shortLabel: 'ÖDÜL +10 BP',
+    shortLabel: 'ÖDÜL +10 TL',
     districtTag: 'Hediye Karesi',
     accentColor: '#e6a817',
     boardPos: sidePos('west', 4),
@@ -402,471 +396,559 @@ export const BOARD_TILES: BoardTile[] = [
 ];
 
 /**
- * OFFICIAL TEACHER ANSWER KEY (1..15)
+ * OFFICIAL TEACHER ANSWER KEY (1..20)
  * NEVER revealed to students before answering!
  */
 export const OFFICIAL_ANSWER_KEY: Record<number, OptionLetter> = {
-  1: 'D',
-  2: 'A',
-  3: 'C',
-  4: 'C',
-  5: 'D',
-  6: 'D',
+  1: 'B',
+  2: 'D',
+  3: 'A',
+  4: 'D',
+  5: 'B',
+  6: 'C',
   7: 'A',
   8: 'D',
-  9: 'B',
-  10: 'A',
-  11: 'A',
-  12: 'D',
-  13: 'C',
+  9: 'A',
+  10: 'D',
+  11: 'D',
+  12: 'A',
+  13: 'D',
   14: 'B',
   15: 'A',
+  16: 'C',
+  17: 'C',
+  18: 'D',
+  19: 'D',
+  20: 'C',
 };
 
 /**
- * THE EXACT, UNALTERED 15 TURKISH QUESTIONS PROVIDED BY THE USER.
- * ZERO extra questions, ZERO edited stems or options!
+ * 5. SINIF TÜRKÇE · SÖZ SANATLARI (20 SORU)
+ * 1–10: Kullanıcının gönderdiği 10 Kişileştirme sorusu ve resmî cevap anahtarı
+ * 11–20: Kullanıcının gönderdiği 10 Benzetme sorusu ve resmî cevap anahtarı
  */
 export const QUESTION_CARDS: QuestionCard[] = [
   {
     number: 1,
     id: 'soru-1',
-    topicTag: 'Özne & Nesne Çatısı',
-    stem: '" Açıklamalar yetersiz bulundu " cümlesinin öznesine ve nesnesine göre çatı özelliği aşağıdakilerden hangisidir ?',
+    topicTag: 'Kişileştirme',
+    stem: 'Aşağıdakilerin hangisinde kişileştirme vardır?',
     options: [
-      { letter: 'A', text: 'Etken - geçişli' },
-      { letter: 'B', text: 'Etken - geçişsiz' },
-      { letter: 'C', text: 'Edilgen - geçişli' },
-      { letter: 'D', text: 'Edilgen - geçişsiz' },
+      { letter: 'A', text: 'Yazarın imza günü bu pazar olacakmış.' },
+      { letter: 'B', text: 'Küçük ceylan, bizi meraklı gözlerle izliyordu.' },
+      { letter: 'C', text: 'Sabah yağmur yağdığı için evden geç çıktım.' },
+      { letter: 'D', text: 'Babam, bozulan oyuncaklarımı tamir edecekmiş.' },
     ],
-    correctAnswer: 'D',
+    correctAnswer: 'B',
     explanation:
-      '"bulundu" fiili -n edilgenlik ekini almıştır (sözde özne: Açıklamalar -> Edilgen) ve nesne alamadığı için geçişsizdir.',
+      'B seçeneğinde insanlara özgü "meraklı gözlerle izleme" özelliği küçük ceylana verildiği için kişileştirme yapılmıştır.',
   },
   {
     number: 2,
     id: 'soru-2',
-    topicTag: 'Etken - Geçişli Özdeşlik',
-    quoteBlock: '" Kadın pencereden seyrediyordu yaşananları "',
-    stem: 'Yukarıdaki cümlenin çatı özelliği ile aynı olan cümle aşağıdakilerden hangisidir ?',
+    topicTag: 'Kişileştirilen Varlık',
+    quoteBlock:
+      'Yemyeşil ormanın ortasından akan derenin yanındaki mağarada bilge bir ayı yaşıyordu.',
+    stem: 'Bu cümlede kişileştirilen varlık aşağıdakilerden hangisidir?',
     options: [
-      { letter: 'A', text: 'Tepki vermese de söylenenleri anlıyordu.' },
-      { letter: 'B', text: 'Hareketsiz bir biçimde olduğu yerde duruyordu.' },
-      { letter: 'C', text: 'Kendine doğru gelen araca bir süre baktı.' },
-      { letter: 'D', text: 'O gün aklına geldikçe ağlıyordu.' },
+      { letter: 'A', text: 'Orman' },
+      { letter: 'B', text: 'Dere' },
+      { letter: 'C', text: 'Mağara' },
+      { letter: 'D', text: 'Ayı' },
     ],
-    correctAnswer: 'A',
+    correctAnswer: 'D',
     explanation:
-      '"seyrediyordu" etken ve geçişlidir ("yaşananları"). A seçeneğindeki "anlıyordu" da etken ve geçişlidir ("söylenenleri").',
+      'İnsanlara ait bir özellik olan "bilge olma" özelliği ayıya verildiği için bu cümlede kişileştirilen varlık ayıdır.',
   },
   {
     number: 3,
     id: 'soru-3',
-    topicTag: 'Çatı Aranmayan Cümle',
-    stem: 'Aşağıdaki cümlelerin hangisinde çatı özelliği aranmaz ?',
+    topicTag: 'Kişileştirilen Varlık',
+    quoteBlock:
+      'Bahçenin kenarındaki elma ağacının altında dinlenen köpek, arkadaşlarının ne yaptığını düşünüyordu.',
+    stem: 'Bu cümlede kişileştirilen varlık aşağıdakilerden hangisidir?',
     options: [
-      { letter: 'A', text: 'Yarın saat beş gibi oraya geleceğim.' },
-      { letter: 'B', text: 'Saatlerdir amaçsızca oradan oraya yürüyorum.' },
-      { letter: 'C', text: "Karadeniz'in en meşhur içeceği çaydır." },
-      { letter: 'D', text: 'Kendisine yapılan iyiliklerin kıymetini anladı.' },
+      { letter: 'A', text: 'Köpek' },
+      { letter: 'B', text: 'Bahçe' },
+      { letter: 'C', text: 'Elma' },
+      { letter: 'D', text: 'Ağaç' },
     ],
-    correctAnswer: 'C',
+    correctAnswer: 'A',
     explanation:
-      'Çatı özelliği yalnızca fiil cümlelerinde aranır. C seçeneğinin yüklemi olan "çaydır" isim soylu olduğu için çatı aranmaz.',
+      'İnsanlara özgü "arkadaşlarının ne yaptığını düşünme" özelliği köpeğe verildiği için kişileştirilen varlık köpektir.',
   },
   {
     number: 4,
     id: 'soru-4',
-    topicTag: 'Geçişsiz Fiil',
-    stem: 'Aşağıdaki cümlelerin hangisi nesne - yüklem ilişkisi açısından geçişsiz bir fiildir ?',
+    topicTag: 'Metinde Kişileştirme',
+    quoteBlock:
+      '(I) Cumartesi sabahı erkenden uyanmıştım çünkü kuzenlerim gelecekti. (II) Kahvaltımı yaptıktan sonra evin bahçesine çıkıp beklemeye başladım. (III) Gece yola çıkan kuzenlerim birazdan burada olurlardı. (IV) Biraz sonra kuzenlerimin yorgun arabalarının bizim sokağa girdiğini gördüm.',
+    stem: 'Bu metindeki numaralanmış cümlelerin hangisinde kişileştirme vardır?',
     options: [
-      { letter: 'A', text: 'Bulduğu çeşme susuzluğunu giderdi.' },
-      { letter: 'B', text: 'Kayıp kolyesini yatağın altında buldu.' },
-      { letter: 'C', text: 'Bebek ilk kez bugün yürüdü.' },
-      { letter: 'D', text: 'Sorulan soruların hepsini bildi.' },
+      { letter: 'A', text: 'I' },
+      { letter: 'B', text: 'II' },
+      { letter: 'C', text: 'III' },
+      { letter: 'D', text: 'IV' },
     ],
-    correctAnswer: 'C',
+    correctAnswer: 'D',
     explanation:
-      'C seçeneğindeki "yürüdü" fiili "onu" sözcüğünü kabul etmez (nesne alamaz); dolayısıyla geçişsizdir.',
+      'IV. cümlede insana özgü "yorgun olma" özelliği cansız bir varlık olan arabaya ("yorgun arabalarının") verildiği için kişileştirme yapılmıştır.',
   },
   {
     number: 5,
     id: 'soru-5',
-    topicTag: 'Dönüşlü Çatı',
-    stem: 'Aşağıdaki cümlelerin hangisinde özne yaptığı işten kendisi etkilenmiştir.',
+    topicTag: 'Kişileştirme',
+    stem: 'Aşağıdakilerin hangisinde kişileştirme vardır?',
     options: [
-      { letter: 'A', text: 'Ağaçlar baharın gelmesi ile budandı.' },
-      { letter: 'B', text: 'Piknik alanına kocaman bir örtü serildi.' },
-      { letter: 'C', text: 'Kalabalık uzun uğraşlar sonucu dağıtıldı.' },
-      { letter: 'D', text: 'Evde düğüne hazırlanmak için süslendi.' },
+      { letter: 'A', text: 'Abim ev almak için hazırlık yapıyordu.' },
+      { letter: 'B', text: 'Ablamın kedisi bana küstü, yanıma gelmiyor.' },
+      { letter: 'C', text: 'Öğleden sonra elektrik kesintisi olacak.' },
+      { letter: 'D', text: 'Akşam yemeğinden sonra yola çıkacağız.' },
     ],
-    correctAnswer: 'D',
+    correctAnswer: 'B',
     explanation:
-      'D seçeneğinde "süslendi" fiilinde süslenme işini yapan (gizli özne: o) aynı zamanda bu işten etkilenen durumdadır (dönüşlü).',
+      'B seçeneğinde insanlara özgü "küsmek" duygusu kediye verildiği için kişileştirme yapılmıştır.',
   },
   {
     number: 6,
     id: 'soru-6',
-    topicTag: 'İşteş Çatı · Karşılıklı',
-    stem: 'Aşağıdaki cümlelerin hangisinde bir işi karşılıklı yapma anlamı vardır ?',
+    topicTag: 'Kişileştirme Olmayan Cümle',
+    stem: 'Aşağıdakilerin hangisinde kişileştirme yoktur?',
     options: [
-      { letter: 'A', text: "Annem ve babam bugün İstanbul ' a gidecek." },
-      { letter: 'B', text: 'Kargalar karların üstünde simsiyah bir örtü oluşturdu.' },
-      { letter: 'C', text: 'Beni anlamamak konusunda ısrar ediyordu.' },
-      { letter: 'D', text: 'Yurt dışındaki kuzeni ile devamlı mektuplaşıyorlar.' },
+      { letter: 'A', text: 'İsyan eden ağaçlar ormana insanların girmesini istemiyordu.' },
+      { letter: 'B', text: 'Bir süre sonra güneş, bulutların arkasına saklanıp uyudu.' },
+      { letter: 'C', text: 'Komşumuzun küçük oğlu her akşam bizim eve gelirdi.' },
+      { letter: 'D', text: 'Bahçede yalnız kalan kirpi, bize çok usandığını söyledi.' },
     ],
-    correctAnswer: 'D',
+    correctAnswer: 'C',
     explanation:
-      'D seçeneğindeki "mektuplaşıyorlar" fiili -ş işteşlik ekiyle iki taraf arasında karşılıklı yapma anlamı taşır.',
+      'A’da ağaçlar (isyan etmek), B’de güneş (saklanıp uyumak), D’de kirpi (usanıp söylemek) kişileştirilmiştir. C seçeneğinde ise gerçek bir insandan söz edildiği için kişileştirme yoktur.',
   },
   {
     number: 7,
     id: 'soru-7',
-    topicTag: 'Geçişsiz Fiil',
-    stem: 'Aşağıdaki cümlelerden hangisinin yüklemi geçişsiz bir fiildir ?',
+    topicTag: 'Kişileştirilen Varlık',
+    quoteBlock:
+      'Hırçın rüzgâr şiddetini artırmış, ağaçların yapraklarını dökmeye başlamıştı. Bazı evlerin çatılarındaki kiremitler de rüzgârın hıncından nasibini almıştı. Biraz sonra yağmur başlayınca rüzgârın hırçınlığı da azaldı.',
+    stem: 'Bu metinde kişileştirilen varlık aşağıdakilerden hangisidir?',
     options: [
-      { letter: 'A', text: 'Tren karanlık tepelerin ardından geliyor.' },
-      { letter: 'B', text: 'Aşağıdaki cümlelerin öznesini bulunuz.' },
-      { letter: 'C', text: 'Odaya yayılmış elbiseleri topluyordu.' },
-      { letter: 'D', text: 'Arabanın patlayan lastiğini değiştirmişler.' },
+      { letter: 'A', text: 'Rüzgâr' },
+      { letter: 'B', text: 'Ağaç' },
+      { letter: 'C', text: 'Kiremit' },
+      { letter: 'D', text: 'Yağmur' },
     ],
     correctAnswer: 'A',
     explanation:
-      'A seçeneğindeki "geliyor" fiili nesne alamaz ("onu geliyor" anlamsızdır); bu nedenle geçişsiz bir fiildir.',
+      'Metinde insanlara özgü "hırçınlık" ve "hınç" duyguları rüzgâra verildiği için kişileştirilen varlık rüzgârdır.',
   },
   {
     number: 8,
     id: 'soru-8',
-    topicTag: 'Sözde Özne / Edilgen',
-    stem: 'Aşağıdaki cümlelerin hangisinde yükleme sorulan "kim ya da ne " sorusu yüklemde bildirilen işi yapanı göstermez ?',
+    topicTag: 'Şiirde Kişileştirme',
+    quoteBlock:
+      'Hava bulutlanıp gök gürleyince\nBir yağmur başlar ya inceden ince\nBak o zaman topraktaki sevince',
+    stem: 'Bu şiirde kişileştirilen varlık aşağıdakilerin hangisidir?',
     options: [
-      { letter: 'A', text: 'Gözler her daim doğruyu anlatır.' },
-      { letter: 'B', text: 'Gecenin derinliğinde fark edilemedi.' },
-      { letter: 'C', text: 'Kitabın cildi iyice bozulmaya başlamıştı.' },
-      { letter: 'D', text: 'Evimiz yeni baştan inşaa ediliyordu.' },
+      { letter: 'A', text: 'Hava' },
+      { letter: 'B', text: 'Gök' },
+      { letter: 'C', text: 'Yağmur' },
+      { letter: 'D', text: 'Toprak' },
     ],
     correctAnswer: 'D',
     explanation:
-      'D seçeneğinde "ne inşa ediliyordu?" sorusunun cevabı olan "Evimiz" işi yapan değil, işten etkilenen sözde öznedir.',
+      'Şiirin son dizesinde insana ait "sevinme" duygusu toprağa ("topraktaki sevince") verildiği için kişileştirilen varlık topraktır.',
   },
   {
     number: 9,
     id: 'soru-9',
-    topicTag: 'Dönüşlü Çatı',
-    stem: 'Aşağıdaki cümlelerin hangisinde yüklemde bildirilen işi yapan özne aynı zamanda bu işten etkilenmiştir ?',
+    topicTag: 'Kişileştirme',
+    stem: 'Aşağıdaki cümlelerin hangisinde kişileştirme vardır?',
     options: [
-      { letter: 'A', text: 'Saha maç için günler öncesinden hazırlandı.' },
-      { letter: 'B', text: 'Adam işe gitmek için hazırlandı.' },
-      { letter: 'C', text: 'Kutlama için yemekler hazırlandı.' },
-      { letter: 'D', text: 'Boğa güreşler için hazırlandı.' },
+      { letter: 'A', text: 'Bu bozuk yoldan tüm arabalar şikayetçiydi.' },
+      { letter: 'B', text: 'Dolaba sakladığım dondurmayı kardeşim yemiş.' },
+      { letter: 'C', text: 'Modern tarım yöntemleri kullanmaya başladık.' },
+      { letter: 'D', text: 'Sınıf kitaplığından birkaç kitap alacağım.' },
     ],
-    correctAnswer: 'B',
+    correctAnswer: 'A',
     explanation:
-      'B seçeneğinde "Adam" hazırlanma işini kendisi yapmakta ve bu işten yine kendisi etkilenmektedir (dönüşlü çatı).',
+      'A seçeneğinde insanlara özgü "şikâyetçi olma" özelliği cansız varlıklar olan arabalara verildiği için kişileştirme yapılmıştır.',
   },
   {
     number: 10,
     id: 'soru-10',
-    topicTag: 'Edilgen Çatı',
-    stem: 'Aşağıdaki cümlelerin hangisinin yüklemi edilgen çatılı bir fiildir ?',
+    topicTag: 'Kişileştirme Olmayan Cümle',
+    stem: 'Aşağıdakilerin hangisinde kişileştirme kullanılmamıştır?',
     options: [
-      { letter: 'A', text: 'Kapılar ardı ardına yüzüme kapatıldı.' },
-      { letter: 'B', text: 'Kuşlar neşe içerisinde gökyüzünde uçuyordu.' },
-      { letter: 'C', text: 'Ağaçlar sonbaharda yapraklarını döküyordu.' },
-      { letter: 'D', text: 'Kedi sobanın kenarına kıvrılıp yatmıştı.' },
+      { letter: 'A', text: 'Sabahları kuşların neşeli şarkılarıyla uyanırım.' },
+      { letter: 'B', text: 'Tavşan ile kaplumbağa yarış tarihinde anlaştı.' },
+      { letter: 'C', text: 'Uyanık kirpi, arkadaşlarından önce gelmişti.' },
+      { letter: 'D', text: 'Sandığın içinden fotoğraf albümünü çıkardı.' },
     ],
-    correctAnswer: 'A',
+    correctAnswer: 'D',
     explanation:
-      'A seçeneğinde kapıları kimin kapattığı belli değildir; "kapatıldı" edilgen çatılı, "Kapılar" ise sözde öznedir.',
+      'A’da kuşlar (neşeli şarkı), B’de tavşan ile kaplumbağa (anlaşmak), C’de kirpi (uyanık olmak) kişileştirilmiştir. D seçeneğinde hiçbir varlığa insan özelliği verilmemiştir.',
   },
   {
     number: 11,
     id: 'soru-11',
-    topicTag: 'Geçişli Fiil',
-    stem: 'Aşağıdaki cümlelerin hangisinde yüklem nesne alabilecek bir fiildir ?',
+    topicTag: 'Benzetme Olmayan Cümle',
+    stem: 'Aşağıdaki cümlelerin hangisinde benzetme kullanılmamıştır?',
     options: [
-      { letter: 'A', text: 'Annesini son zamanlarda çok üzmüştü.' },
-      { letter: 'B', text: 'Yıllarca başarılı olabilmek için çalışıp çabaladı.' },
-      { letter: 'C', text: 'Sokak her günün aksine o gün ıssızdı.' },
-      { letter: 'D', text: 'Arabada hiç sıkılmadan saatlerce otururdu.' },
+      { letter: 'A', text: 'Altın kalpli çocuk sokak hayvanlarını unutmamış.' },
+      { letter: 'B', text: 'Dün ana cadde, arı kovanı gibi kalabalıktı.' },
+      { letter: 'C', text: 'Tamir ettiğim makine saat gibi işlemeye başladı.' },
+      { letter: 'D', text: 'Öğleden sonra şiddetli bir kar yağışı başlamıştı.' },
     ],
-    correctAnswer: 'A',
+    correctAnswer: 'D',
     explanation:
-      'A seçeneğindeki "üzmüştü" fiili "kimi üzmüştü?" sorusuna "Annesini" nesnesiyle yanıt verir; geçişlidir.',
+      'A’da çocuğun kalbi altına, B’de cadde arı kovanına, C’de makine saate benzetilmiştir. D seçeneğinde ise hiçbir benzetme yapılmamıştır.',
   },
   {
     number: 12,
     id: 'soru-12',
-    topicTag: 'Nesne - Özne İlişkisi',
+    topicTag: 'Benzeyen Varlık',
     quoteBlock:
-      '"Can kafeste durmaz uçar\nDünya bir han, konan göçer\nAy dolanır yıllar geçer\nDostlar beni hatırlasın"',
-    stem: 'Yukarıdaki dörtlükte aşağıdaki fiillerden hangisi nesne - özne ilişkisi açısından diğerlerinden farklıdır ?',
+      'Duvarları ve tavanı uzun bir kışın isleriyle kararmış bu yer odasında mahpus gibi duran bodur ve çirkin ocak, içindeki odunları sanki hiddetle yakıyor, bir an evvel yutmaya çalışıyordu.',
+    stem: 'Bu cümledeki benzetmede benzeyen varlık aşağıdakilerden hangisidir?',
     options: [
-      { letter: 'A', text: 'Uçar' },
-      { letter: 'B', text: 'Göçer' },
-      { letter: 'C', text: 'Geçer' },
-      { letter: 'D', text: 'Hatırlasın' },
+      { letter: 'A', text: 'Ocak' },
+      { letter: 'B', text: 'Duvar' },
+      { letter: 'C', text: 'Oda' },
+      { letter: 'D', text: 'Odun' },
     ],
-    correctAnswer: 'D',
+    correctAnswer: 'A',
     explanation:
-      '"Uçar", "göçer" ve "geçer" geçişsizdir; "Hatırlasın" fiili "beni hatırlasın" şeklinde nesne aldığı için geçişlidir.',
+      'Cümlede "mahpus gibi duran bodur ve çirkin ocak" ifadesinde mahpusa benzetilen (benzeyen) varlık "ocak"tır.',
   },
   {
     number: 13,
     id: 'soru-13',
-    topicTag: 'Çatı Özdeşliği',
-    quoteBlock: '"Çocuğun moraran ellerini hepimiz gördük."',
-    stem: 'Aşağıdaki cümlelerden hangisi çatı bakımından yukarıdaki cümle ile özdeştir ?',
+    topicTag: 'Kendisine Benzetilen',
+    quoteBlock:
+      'Dar kapısından başka aydınlık girecek hiçbir yeri olmayan dükkânında tek başına, gece gündüz kıvılcımlar saçarak çalışan Koca Ali, tıpkı kafese konmuş terbiyeli bir aslanı andırıyordu.',
+    stem: 'Bu cümledeki benzetmede kendisine benzetilen varlık aşağıdakilerden hangisidir?',
     options: [
-      { letter: 'A', text: 'Bir anda koşarak yanıma geldi.' },
-      { letter: 'B', text: 'Boş sandalyelerden birine oturdu.' },
-      { letter: 'C', text: 'Kızağın demirlerini kısa sürede yeniledik.' },
-      { letter: 'D', text: 'Anlatılanları duyunca bir süre sustu.' },
+      { letter: 'A', text: 'Kapı' },
+      { letter: 'B', text: 'Dükkân' },
+      { letter: 'C', text: 'Kafes' },
+      { letter: 'D', text: 'Aslan' },
     ],
-    correctAnswer: 'C',
+    correctAnswer: 'D',
     explanation:
-      'Örnek cümledeki "gördük" etken-geçişlidir. C seçeneğindeki "yeniledik" de etken-geçişli olarak özdeştir.',
+      'Cümlede Koca Ali (benzeyen), kafese konmuş terbiyeli bir "aslan"a (kendisine benzetilen) benzetilmiştir.',
   },
   {
     number: 14,
     id: 'soru-14',
-    topicTag: 'İşteş Çatı · Karşılıklı',
-    stem: 'Aşağıdaki cümlelerin hangisinde yüklemde bildirilen işi "karşılıklı yapma " anlamı vardır ?',
+    topicTag: 'Kendisine Benzetilen',
+    quoteBlock:
+      'Akdeniz’in kahramanlık yuvası sonsuz ufuklarına bakan küçük tepe, minimini bir çiçek ormanı gibiydi.',
+    stem: 'Bu cümledeki benzetmede kendisine benzetilen varlık aşağıdakilerden hangisidir?',
     options: [
-      { letter: 'A', text: 'Kontrolsüz gelen aracı gören yayalar kaçıştı.' },
-      { letter: 'B', text: 'Karşıdan gelen adamla selamlaştı.' },
-      { letter: 'C', text: 'Rüzgar başlayınca polenler havada uçuştu.' },
-      { letter: 'D', text: 'Komik manzara karşısında herkes gülüştü.' },
+      { letter: 'A', text: 'Akdeniz' },
+      { letter: 'B', text: 'Çiçek ormanı' },
+      { letter: 'C', text: 'Tepe' },
+      { letter: 'D', text: 'Ufuk' },
     ],
     correctAnswer: 'B',
     explanation:
-      'B seçeneğindeki "selamlaştı" fiili iki kişinin karşılıklı gerçekleştirdiği bir eylemdir; diğerleri birlikte yapmadır.',
+      'Cümlede küçük tepe (benzeyen), minimini bir "çiçek ormanı"na (kendisine benzetilen) benzetilmiştir.',
   },
   {
     number: 15,
     id: 'soru-15',
-    topicTag: 'Edilgen Çatı',
-    stem: 'Aşağıdaki cümlelerin hangisinde edilgen çatılı bir fiil kullanılmıştır ?',
+    topicTag: 'Benzetme',
+    stem: 'Aşağıdaki cümlelerin hangisinde benzetme yapılmıştır?',
     options: [
-      { letter: 'A', text: 'Bahçedeki güller bir bir sulandı.' },
-      { letter: 'B', text: 'Dakikalarca odanın içinde dolandı.' },
-      { letter: 'C', text: 'Misafirler kalorifer yanınca ısındı.' },
-      { letter: 'D', text: 'Bu zor işi bitirince iki gün dinlendi.' },
+      { letter: 'A', text: 'Kar, her tarafı bembeyaz çarşaf gibi kapatmıştı.' },
+      { letter: 'B', text: 'Otelin kapısından çıkınca gözleri kamaşmıştı.' },
+      { letter: 'C', text: 'Biraz sonra elinde kalın bir sözlükle içeri girdi.' },
+      { letter: 'D', text: 'Otobüs gelmeden biletimi alıp bir banka oturdum.' },
     ],
     correctAnswer: 'A',
     explanation:
-      'A seçeneğinde sulama işini yapan belli değildir; "Bahçedeki güller" sözde özne, "sulandı" edilgen çatılıdır.',
+      'A seçeneğinde her tarafı kapatan kar, bembeyaz olması yönüyle "gibi" edatı kullanılarak çarşafa benzetilmiştir.',
+  },
+  {
+    number: 16,
+    id: 'soru-16',
+    topicTag: 'Benzetme Yönü',
+    quoteBlock:
+      'Küçük çocuk, zeytin gibi simsiyah gözlerini bize dikip aradığımız adamın burada oturmadığını söyledi.',
+    stem: 'Bu metindeki benzetmede benzetme yönü aşağıdakilerden hangisidir?',
+    options: [
+      { letter: 'A', text: 'Çocuk' },
+      { letter: 'B', text: 'Gözler' },
+      { letter: 'C', text: 'Simsiyah' },
+      { letter: 'D', text: 'Adam' },
+    ],
+    correctAnswer: 'C',
+    explanation:
+      'Metinde çocuğun gözleri (benzeyen), zeytine (kendisine benzetilen) "simsiyah" olma özelliği yönünden benzetilmiştir; bu nedenle benzetme yönü "simsiyah"tır.',
+  },
+  {
+    number: 17,
+    id: 'soru-17',
+    topicTag: 'Benzeyen Varlık',
+    quoteBlock:
+      'Yavaşça beşiğe eğildi. Beşikte ağlayan çocuğa baktı. Sonra kürek gibi kocaman elleriyle bebeği beşikten kaldırdı. Biraz salladıktan sonra bebek susmuştu. Biberonu hazırlayıp bebeğe süt içirmeye başladı.',
+    stem: 'Bu metindeki benzetmede benzeyen varlık aşağıdakilerden hangisidir?',
+    options: [
+      { letter: 'A', text: 'Beşik' },
+      { letter: 'B', text: 'Çocuk' },
+      { letter: 'C', text: 'El' },
+      { letter: 'D', text: 'Kürek' },
+    ],
+    correctAnswer: 'C',
+    explanation:
+      'Metinde "kürek gibi kocaman elleriyle" ifadesinde küreğe benzetilen (benzeyen) varlık "el"dir.',
+  },
+  {
+    number: 18,
+    id: 'soru-18',
+    topicTag: 'Şiirde Benzetme',
+    quoteBlock:
+      'Ufku tutuşturmadan fecrin ilk alevleri\nArkamızda kalıyor şehrin kenar evleri\nBulutların ardında gün yanmadan sönüyor\nHöyükler bir dağ gibi uzaktan görünüyor',
+    stem: 'Bu şiirin kaçıncı dizesinde benzetme yapılmıştır?',
+    options: [
+      { letter: 'A', text: 'I' },
+      { letter: 'B', text: 'II' },
+      { letter: 'C', text: 'III' },
+      { letter: 'D', text: 'IV' },
+    ],
+    correctAnswer: 'D',
+    explanation:
+      'Şiirin IV. dizesinde "Höyükler bir dağ gibi uzaktan görünüyor" denilerek höyükler "gibi" edatıyla dağa benzetilmiştir.',
+  },
+  {
+    number: 19,
+    id: 'soru-19',
+    topicTag: 'Benzetme Olmayan Cümle',
+    stem: 'Aşağıdakilerin hangisinde benzetme yoktur?',
+    options: [
+      { letter: 'A', text: 'Dışarıda kalan ekmekler taş gibi sert olmuştu.' },
+      { letter: 'B', text: 'Buz gibi sudan kana kana içip yola devam ettik.' },
+      { letter: 'C', text: 'Bu çocuk karınca gibi çalışkan ve güçlüydü.' },
+      { letter: 'D', text: 'Beklediğimiz otobüs saatler sonra gelmişti.' },
+    ],
+    correctAnswer: 'D',
+    explanation:
+      'A’da ekmekler taşa, B’de su buza, C’de çocuk karıncaya benzetilmiştir. D seçeneğinde hiçbir benzetme yapılmamıştır.',
+  },
+  {
+    number: 20,
+    id: 'soru-20',
+    topicTag: 'Benzetme',
+    stem: 'Aşağıdaki cümlelerin hangisinde benzetme yapılmıştır?',
+    options: [
+      { letter: 'A', text: 'Evlerin duvarına kuşlar için yuvalar yapılmıştı.' },
+      { letter: 'B', text: 'Akşam köyün sürüsü yolun başında göründü.' },
+      { letter: 'C', text: 'Ağaçların yaprakları birer altın gibi parlıyordu.' },
+      { letter: 'D', text: 'Bahçedeki kedi meraklı gözlerle bizi izliyordu.' },
+    ],
+    correctAnswer: 'C',
+    explanation:
+      'C seçeneğinde ağaçların yaprakları, parlaklığı yönünden "gibi" edatıyla altına benzetilmiştir. (D seçeneğinde ise kişileştirme vardır.)',
   },
 ];
 
 /**
- * Istanbul Real Estate Market (ONLY Gayrimenkul / Emlak — Vehicles removed per user request!).
+ * İstanbul İlçe Kartları (En çok ilçe alan takım SÖZOPLY şampiyonu olur!)
  */
 export const PROPERTY_ASSETS: PropertyAsset[] = [
   {
     id: 'kucuk-arsa',
-    name: 'Küçük Arsa',
+    name: 'Eyüpsultan İlçesi',
     kind: 'emlak',
     price: 40,
-    districtTileIndex: 19, // Sultanahmet yakını
-    marketInfo: 'Tarihî Yarımada çevresinde yüksek değerli imarlı İstanbul arsası.',
+    districtTileIndex: 21, // Haliç yakını
+    marketInfo: 'Haliç kıyısında teleferiği, yeşil tepeleri ve tarihî sokaklarıyla güzel bir İstanbul ilçesi.',
     color: '#2e7d5b',
   },
   {
     id: 'karakoy-dukkani',
-    name: 'Karaköy Dükkânı',
+    name: 'Bakırköy İlçesi',
     kind: 'emlak',
     price: 55,
-    districtTileIndex: 15, // Karaköy
-    marketInfo: 'Karaköy liman caddesinde tarihî kemerli işlek köşe dükkânı.',
+    districtTileIndex: 15, // Karaköy yakını
+    marketInfo: 'Geniş parkları, bisiklet yolları ve masmavi sahiliyle çok sevilen bir İstanbul ilçesi.',
     color: '#b76e22',
   },
   {
     id: 'balat-tarihi-evi',
-    name: 'Balat Tarihî Evi',
+    name: 'Fatih İlçesi',
     kind: 'emlak',
     price: 65,
-    districtTileIndex: 21, // Balat
-    marketInfo: 'Haliç manzaralı, renkli cumbalı restore edilmiş tarihî Balat evi.',
+    districtTileIndex: 21, // Balat / Fatih
+    marketInfo: 'Renkli evleri, tarihî camileri ve müzeleriyle İstanbul’un kalbindeki ilçe.',
     color: '#d45d36',
   },
   {
     id: 'galata-dairesi',
-    name: 'Galata Dairesi',
+    name: 'Beyoğlu İlçesi',
     kind: 'emlak',
     price: 75,
-    districtTileIndex: 13, // Galata Kulesi
-    marketInfo: 'Galata Kulesi’ne bakan yüksek tavanlı, balkonlu tarihî apartman dairesi.',
+    districtTileIndex: 13, // Galata Kulesi / Beyoğlu
+    marketInfo: 'Galata Kulesi ve kırmızı nostaljik tramvayıyla ünlü, cıvıl cıvıl İstanbul ilçesi.',
     color: '#9b4d3a',
   },
   {
     id: 'istanbul-kafe',
-    name: 'Beşiktaş Sahil Kafesi',
+    name: 'Beşiktaş İlçesi',
     kind: 'emlak',
-    price: 90,
+    price: 85,
     districtTileIndex: 9, // Beşiktaş
-    marketInfo: 'Beşiktaş sahilinde gün boyu canlı, Boğaz esintili mülk kafe.',
+    marketInfo: 'Vapur iskelesi, Ortaköy meydanı ve Boğaz manzarasıyla neşeli sahil ilçesi.',
     color: '#0d8a8a',
   },
   {
     id: 'taksim-magazasi',
-    name: 'Taksim Mağazası',
+    name: 'Kadıköy İlçesi',
     kind: 'emlak',
-    price: 110,
+    price: 95,
     districtTileIndex: 11, // Taksim
-    marketInfo: 'İstiklal Caddesi üzerinde tramvay yoluna cepheli prestijli mağaza mülkü.',
+    marketInfo: 'Anadolu yakasında kitapçıları, parkları ve sahil yürüyüş yollarıyla ünlü ilçe.',
     color: '#c42d3a',
   },
   {
     id: 'uskudar-yalisi',
-    name: 'Üsküdar Yalısı',
+    name: 'Üsküdar İlçesi',
     kind: 'emlak',
-    price: 120,
+    price: 105,
     districtTileIndex: 1, // Üsküdar
-    marketInfo: 'Anadolu kıyısında Kız Kulesi manzaralı tarihî ahşap Boğaz yalısı.',
+    marketInfo: 'Kız Kulesi’ne karşı martıları izleyebileceğin, Anadolu yakasının tarihî sahil ilçesi.',
     color: '#1d6fd1',
   },
   {
     id: 'ortakoy-butik-otel',
-    name: 'Ortaköy Butik Oteli',
+    name: 'Sarıyer İlçesi',
     kind: 'emlak',
-    price: 130,
+    price: 115,
     districtTileIndex: 7, // Ortaköy
-    marketInfo: 'Ortaköy meydanında Boğaz esintili, taş cepheli butik otel mülkü.',
+    marketInfo: 'Yemyeşil ormanları, köprü manzarası ve serin Boğaz rüzgârıyla ünlü ilçe.',
     color: '#d9881c',
   },
   {
     id: 'sultanahmet-konagi',
-    name: 'Sultanahmet Konağı',
+    name: 'Adalar İlçesi',
     kind: 'emlak',
-    price: 140,
+    price: 125,
     districtTileIndex: 19, // Sultanahmet
-    marketInfo: 'Tarihî Yarımada’nın kalbinde avlulu, özgün Osmanlı konağı.',
+    marketInfo: 'Marmara Denizi’nin ortasında çam ağaçları ve bisiklet yollarıyla dolu huzurlu ilçe.',
     color: '#1a5f8a',
   },
   {
     id: 'bogaz-manzarali-villa',
-    name: 'Boğaz Manzaralı Villa',
+    name: 'Beykoz İlçesi',
     kind: 'emlak',
-    price: 150,
+    price: 135,
     districtTileIndex: 5, // 15 Temmuz Köprüsü yakını
-    marketInfo: 'Boğaz Köprüsü’nü panoramik gören geniş bahçeli seçkin villa.',
+    marketInfo: 'Boğaz’ın iki kıyısını izleyen yemyeşil koruları ve temiz havasıyla ünlü İstanbul ilçesi.',
     color: '#0c6b9a',
   },
 ];
 
 /**
- * Bonus, İndirim ve Sürpriz Ceza Kartları
- * (Yalnızca doğru bilen takımlara isteğe bağlı olarak sunulur!)
+ * Ödül ya da Ceza Kartları (Şans Kartları)
  */
 export const CHANCE_CARDS: ChanceCard[] = [
   {
     id: 'emlak-indirimi-25',
-    title: '%25 Emlak İndirimi',
+    title: '25 TL İlçe İndirimi',
     kind: 'sans',
-    description: 'İstanbul Emlak Teşviki! Bir sonraki gayrimenkul alımında tam %25 indirim kazandın.',
+    description: 'Harika haber! Bir sonraki ilçe kartını alırken 25 TL indirim kazandınız.',
     effectType: 'property_discount',
-    value: 0.25,
+    value: 25,
   },
   {
     id: 'super-emlak-indirimi-35',
-    title: '%35 Süper Emlak İndirimi',
+    title: '35 TL Süper İlçe İndirimi',
     kind: 'sans',
-    description: 'Boğaz Fırsat Günü! Bir sonraki gayrimenkul alımında %35 büyük indirim kazandın.',
+    description: 'Büyük fırsat! Bir sonraki ilçe kartını alırken tam 35 TL indirim kazandınız.',
     effectType: 'property_discount',
-    value: 0.35,
+    value: 35,
   },
   {
     id: 'bogaz-bonusu-30',
-    title: '+30 BP Boğaz Bonusu',
+    title: '+30 TL Boğaz Ödülü',
     kind: 'sans',
-    description: 'İstanbul kültür turu ödülü! Takım kasasına anında +30 BP bonus eklendi.',
+    description: 'İstanbul gezisinde sürpriz hediye! Takımına hemen +30 TL eklendi.',
     effectType: 'gain_bp',
     value: 30,
   },
   {
     id: 'istanbul-yatirim-50',
-    title: '+50 BP Yatırım Bonusu',
+    title: '+50 TL Süper Ödül',
     kind: 'sans',
-    description: 'Şehirdeki girişimin büyük ilgi gördü! Takım kasasına +50 BP bonus eklendi.',
+    description: 'Çok başarılısın! Takımının kasasına hemen +50 TL ödül eklendi.',
     effectType: 'gain_bp',
     value: 50,
   },
   {
     id: 'sansli-emlak-firsati',
-    title: 'Özel Emlak Fırsatı',
+    title: 'Ekstra İlçe Fırsatı',
     kind: 'sans',
-    description: 'Şans senden yana! Ekstra bir Emlak Kartı çekme hakkı kazandın.',
+    description: 'Şans senden yana! Hemen fazladan bir İlçe Kartı çekme hakkı kazandın.',
     effectType: 'bonus_property_draw',
   },
   {
     id: 'vapur-bonusu',
-    title: 'Vapur Seferi · Ekstra Zar',
+    title: 'Vapur Gezisi · 1 Zar Daha',
     kind: 'sans',
-    description: 'Şehir Hatları vapuru rüzgârı arkasına aldı! Ekstra bir zar atma hakkı kazandın.',
+    description: 'Vapur seni hızlıca ilerletti! Bir kez daha zar atma hakkı kazandın.',
     effectType: 'extra_roll',
   },
   {
     id: 'ceza-bogaz-koprusu-25',
-    title: 'Sürpriz Ceza (-25 BP)',
+    title: 'Köprü Cezası (-25 TL)',
     kind: 'ceza',
-    description: 'Boğaz Köprüsü hızlı geçiş cezası! Takım kasasından 25 BP silindi.',
+    description: 'Eyvah! Köprü geçiş cezası çıktı. Takımından 25 TL eksildi.',
     effectType: 'lose_bp',
     value: 25,
   },
   {
     id: 'ceza-trafik-25',
-    title: 'Trafik Cezası (-25 BP)',
+    title: 'Trafik Cezası (-25 TL)',
     kind: 'ceza',
-    description: 'Hatalı park ve şehir içi trafik cezası! Takım kasasından 25 BP silindi.',
+    description: 'Eyvah! Şehir içinde trafik cezası çıktı. Takımından 25 TL eksildi.',
     effectType: 'lose_bp',
     value: 25,
   },
   {
     id: 'ceza-belediye-vergisi-25',
-    title: 'Şehir Bakım Cezası (-25 BP)',
+    title: 'Park Cezası (-25 TL)',
     kind: 'ceza',
-    description: 'İstanbul belediye bakım ve düzenleme kesintisi! Takım kasasından 25 BP silindi.',
+    description: 'Eyvah! Hatalı park cezası çıktı. Takımından 25 TL eksildi.',
     effectType: 'lose_bp',
     value: 25,
   },
 ];
 
-export const FIILDE_CATI_SUMMARY = [
+export const SOZ_SANATLARI_SUMMARY = [
   {
-    group: 'Özne - Yüklem İlişkisi',
-    name: 'Etken Fiil',
-    rule: 'İşi yapan gerçek veya gizli özne bellidir; fiil -l/-n edilgenlik eki almaz.',
-    example: 'Çocuğun moraran ellerini hepimiz gördük. (Soru 13)',
+    group: 'Söz Sanatları · 1. Bölüm',
+    name: '1. Benzetme',
+    rule: 'Sözün etkisini arttırmak veya anlatımı güçlendirmek için aralarında ilgi bulunan iki kavram ya da varlıktan, zayıf olanın güçlü olana benzetilmesidir.',
+    example: 'Yaptığı poğaçalar kaya gibi sert olmuştu. / Babaannemin pamuk gibi yumuşacık elleri vardı.',
   },
   {
-    group: 'Özne - Yüklem İlişkisi',
-    name: 'Edilgen Fiil',
-    rule: 'İşi yapan belli değildir; fiil -l/-n eki alır, işten etkilenen öge sözde öznedir.',
-    example: 'Açıklamalar yetersiz bulundu. / Bahçedeki güller bir bir sulandı. (Soru 1, 10, 15)',
+    group: 'Benzetme Ögeleri · 1. ve 2. Öge',
+    name: 'Benzeyen ve Kendisine Benzetilen',
+    rule: 'Benzetmede zayıf olan öge "benzeyen", güçlü olan öge "kendisine benzetilen"dir. Benzetmenin olabilmesi için dört unsurun tamamının olmasına gerek yoktur.',
+    example: 'Ayşe teyzenin zeytin gibi simsiyah gözleri vardı. (Benzeyen: Ayşe teyzenin gözleri · Kendisine Benzetilen: zeytin)',
   },
   {
-    group: 'Özne - Yüklem İlişkisi',
-    name: 'Dönüşlü Fiil',
-    rule: 'Fiil -l/-n eki alır fakat işi yapan da işten etkilenen de aynı gerçek öznedir.',
-    example: 'Evde düğüne hazırlanmak için süslendi. / Adam işe gitmek için hazırlandı. (Soru 5, 9)',
+    group: 'Benzetme Ögeleri · 3. ve 4. Öge',
+    name: 'Benzetme Yönü ve Benzetme Edatı',
+    rule: 'İki varlık arasındaki ortak özellik "benzetme yönü", benzetme ilgisi kuran sözcük ise "benzetme edatı"dır.',
+    example: 'Kaya gibi sağlam bir bisiklet almış kardeşine. (Benzetme Yönü: sağlamlık · Benzetme Edatı: gibi)',
   },
   {
-    group: 'Özne - Yüklem İlişkisi',
-    name: 'İşteş Fiil',
-    rule: 'Fiil -ş eki alır; eylem karşılıklı (mektuplaşıyorlar, selamlaştı) veya birlikte (kaçıştı, gülüştü) yapılır.',
-    example: 'Karşıdan gelen adamla selamlaştı. (Soru 6, 14)',
-  },
-  {
-    group: 'Nesne - Yüklem İlişkisi',
-    name: 'Geçişli Fiil',
-    rule: 'Nesne alabilen fiillerdir ("onu" sözcüğü veya "neyi/kimi?" sorusuyla uyumludur).',
-    example: 'Annesini son zamanlarda çok üzmüştü. / Dostlar beni hatırlasın. (Soru 2, 11, 12)',
-  },
-  {
-    group: 'Nesne - Yüklem İlişkisi',
-    name: 'Geçişsiz Fiil & İsim Cümlesi',
-    rule: 'Nesne alamayan fiiller geçişsizdir (yürüdü, geliyor, uçar). İsim cümlelerinde (çaydır) çatı özelliği aranmaz!',
-    example: 'Bebek ilk kez bugün yürüdü. / Karadeniz’in en meşhur içeceği çaydır. (Soru 3, 4, 7)',
+    group: 'Söz Sanatları · 2. Bölüm',
+    name: '2. Kişileştirme',
+    rule: 'İnsan dışındaki canlı ve cansız varlıklara insana ait özelliklerin verilmesiyle yapılan söz sanatıdır.',
+    example: 'Güneş, bu sabah sımsıcak gülümsüyordu bizlere. / Kalemim dertli dertli bana bakıyor.',
   },
 ];
+
+export const FIILDE_CATI_SUMMARY = SOZ_SANATLARI_SUMMARY;

@@ -76,7 +76,7 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
   };
 
   const timePct = Math.max(0, Math.min(100, (secondsLeft / QUESTION_TIME_LIMIT_SECONDS) * 100));
-  const isUrgent = !isAnswered && secondsLeft <= 10;
+  const isUrgent = !isAnswered && secondsLeft <= 15;
 
   return (
     <div
@@ -86,11 +86,11 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
       aria-modal="true"
       aria-labelledby="question-card-title"
     >
-      <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl border-4 border-[#f27b1a] bg-[#fcf9f2] shadow-2xl">
+      <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl border-4 border-[#6d44a6] bg-[#fcf9f2] shadow-2xl screen-fade-in">
         {/* Card Header */}
-        <div className="bg-[#f27b1a] px-6 py-4 text-white flex flex-wrap items-center justify-between gap-2">
+        <div className="bg-[#6d44a6] px-6 py-4 text-white flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#d95b0c] font-display text-xl font-black shadow-sm">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#552d8c] font-display text-xl font-black shadow-sm">
               {question.number}
             </span>
             <div>
@@ -98,7 +98,7 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
                 SORU KARTI {question.number} / {QUESTION_CARDS.length} · {tileName}
               </div>
               <h2 id="question-card-title" className="font-display text-xl md:text-2xl font-extrabold">
-                Fiilde Çatı Görevi · {team.name}
+                Söz Sanatları Görevi · {team.name}
               </h2>
             </div>
           </div>
@@ -121,7 +121,7 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
 
             <div className="hidden sm:flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-1.5 text-xs font-extrabold">
               <HelpCircle className="h-4 w-4" />
-              <span>Doğru: +{CORRECT_ANSWER_BP} BP · Yanlış / Süre: -25 BP</span>
+              <span>Doğru: +{CORRECT_ANSWER_BP} TL · Yanlış / Süre: -25 TL</span>
             </div>
           </div>
         </div>
@@ -216,10 +216,10 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
               <div className="space-y-1">
                 <div className="text-base font-black">
                   {outcome.correct
-                    ? `Tebrikler ${team.name}! Doğru Cevap (+${outcome.deltaBp} BP)`
+                    ? `Harika ${team.name}! Doğru Cevap (+${outcome.deltaBp} TL)`
                     : outcome.timedOut
-                      ? `Süre Doldu (1 dk)! (${outcome.deltaBp} BP) · Doğru Seçenek: ${outcome.correctAnswer}`
-                      : `Yanlış Cevap (${outcome.deltaBp} BP) · Doğru Seçenek: ${outcome.correctAnswer}`}
+                      ? `Süre Doldu (2 dk)! (${outcome.deltaBp} TL) · Doğru Cevap: ${outcome.correctAnswer}`
+                      : `Yanlış Cevap (${outcome.deltaBp} TL) · Doğru Cevap: ${outcome.correctAnswer}`}
                 </div>
                 <p className="text-sm font-semibold leading-relaxed opacity-95">
                   {outcome.explanation}
@@ -234,12 +234,12 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
               {isAnswered
                 ? isLastQuestion
                   ? outcome.correct
-                    ? 'Son soruyu doğru bildiniz! Son Bonus/Emlak hakkınızı kullandıktan sonra oyun sona erecek.'
-                    : `Tüm ${QUESTION_CARDS.length} soru tamamlandı! Oyun sona eriyor ve şampiyon açıklanacak.`
+                    ? 'Son soruyu doğru bildin! Ödül ya da Ceza / İlçe hakkını kullandıktan sonra şampiyon belli olacak.'
+                    : `Tüm ${QUESTION_CARDS.length} soru bitti! Şimdi SÖZOPLY şampiyonunu görelim.`
                   : outcome.correct
-                    ? 'İsterseniz sürpriz Bonus/İndirim/Ceza kartı çekebilir veya direkt geçebilirsiniz.'
-                    : 'Yanlış veya süresi dolan sorularda bonus kartı verilmez.'
-                : `1 dakika (${QUESTION_TIME_LIMIT_SECONDS} sn) içinde doğru seçeneği işaretleyip onaylayınız (${formatCountdown(secondsLeft)} kaldı).`}
+                    ? 'İstersen Ödül ya da Ceza kartı çekebilir veya direkt İlçe Kartı aşamasına geçebilirsin.'
+                    : 'Yanlış veya süresi dolan sorularda Ödül ya da Ceza kartı çekilmez.'
+                : `2 dakika (${QUESTION_TIME_LIMIT_SECONDS} sn) içinde doğru şıkkı seçip onayla (${formatCountdown(secondsLeft)} kaldı).`}
             </div>
 
             {!isAnswered ? (
@@ -268,10 +268,10 @@ export const QuestionCardModal: React.FC<QuestionCardModalProps> = ({
                 <button
                   type="button"
                   onClick={onContinue}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#149a7c] hover:bg-[#0f7d64] px-5 py-2.5 text-sm md:text-base font-extrabold text-white shadow-md cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#d81b75] hover:bg-[#b51460] px-5 py-2.5 text-sm md:text-base font-extrabold text-white shadow-md cursor-pointer"
                 >
                   <Sparkles className="h-4 w-4" />
-                  Bonus / İndirim Kartı Çek
+                  Ödül ya da Ceza Çek
                 </button>
               </div>
             ) : (

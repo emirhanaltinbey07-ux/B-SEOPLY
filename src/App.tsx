@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BankFinanceModal } from './components/BankFinanceModal';
 import { BottomDock } from './components/BottomDock';
 import { ChanceCardModal } from './components/ChanceCardModal';
 import { EvidenceVaultModal } from './components/EvidenceVaultModal';
+import { LessonSection } from './components/LessonSection';
 import {
   DiceResultBanner,
   FpsCameraHudBadge,
@@ -36,25 +36,20 @@ import {
   createFairDiceRoller,
   createInitialGameState,
   drawPropertyCard,
-  executePeerLoan,
   getActiveTeam,
   getQuestionByNumber,
   getRankedTeams,
   purchaseActiveProperty,
-  repayBankLoan,
-  repayPeerLoan,
   resolveDiceRoll,
   resolveJailDecision,
-  sellAssetToBank,
   skipActiveProperty,
   skipBonusCardAfterQuestion,
   submitQuestionAnswer,
-  takeBankLoan,
   TeamSetupInput,
   timeoutQuestion,
-  tradeAssetBetweenTeams,
 } from './game/engine';
 import { GameState, OptionLetter } from './game/types';
+import { getDiceCameraTimings } from './scene/characterExpressions';
 import { IstanbulSceneController } from './scene/IstanbulScene';
 import { soundEngine } from './utils/sound';
 
@@ -65,11 +60,13 @@ function isAutostartEnabled(): boolean {
 }
 
 export default function App() {
+  const [appSection, setAppSection] = useState<'lesson' | 'game'>(() =>
+    isAutostartEnabled() ? 'game' : 'lesson'
+  );
   const [gameState, setGameState] = useState<GameState>(() =>
     createInitialGameState(DEFAULT_TEAMS_SETUP, isAutostartEnabled(), false)
   );
   const [muted, setMuted] = useState(false);
-  const [showBankModal, setShowBankModal] = useState(false);
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [showTeacherPanel, setShowTeacherPanel] = useState(false);
   const [showFinalReview, setShowFinalReview] = useState(false);
@@ -79,21 +76,41 @@ export default function App() {
   const sceneRef = useRef<IstanbulSceneController | null>(null);
   const diceRollerRef = useRef(createFairDiceRoller());
   const diceRevealTimerRef = useRef<number | null>(null);
+  const boardOverviewTimerRef = useRef<number | null>(null);
   const stateRef = useRef<GameState>(gameState);
   stateRef.current = gameState;
 
-  useEffect(() => {
-    return () => {
-      if (diceRevealTimerRef.current !== null) {
-        window.clearTimeout(diceRevealTimerRef.current);
-      }
-    };
+  const clearDiceTimers = useCallback(() => {
+    if (diceRevealTimerRef.current !== null) {
+      window.clearTimeout(diceRevealTimerRef.current);
+      diceRevealTimerRef.current = null;
+    }
+    if (boardOverviewTimerRef.current !== null) {
+      window.clearTimeout(boardOverviewTimerRef.current);
+      boardOverviewTimerRef.current = null;
+    }
   }, []);
 
-  // Keep <body data-state="..."> synchronized for clear state inspection
+  useEffect(() => {
+    return () => {
+      clearDiceTimers();
+    };
+  }, [clearDiceTimers]);
+
+  // Keep <body data-state="..." data-section="..."> synchronized for clear state inspection
   useEffect(() => {
     document.body.dataset.state = gameState.screen;
-  }, [gameState.screen]);
+    document.body.dataset.section = appSection;
+  }, [gameState.screen, appSection]);
+
+  // Ensure Three.js canvas updates dimensions cleanly when switching into Part 2 (3D Game)
+  useEffect(() => {
+    if (appSection !== 'game') return;
+    const raf = window.requestAnimationFrame(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [appSection]);
 
   // Auto-dismiss special toast after 4.5s
   useEffect(() => {
@@ -116,7 +133,6 @@ export default function App() {
       const champion = getRankedTeams(gameState.teams)[0];
       setShowFinalReview(false);
       setShowTeacherPanel(false);
-      setShowBankModal(false);
       setShowInventoryModal(false);
       soundEngine.playVictoryFanfare();
       sceneRef.current?.triggerCelebrationFireworks(
@@ -127,9 +143,9 @@ export default function App() {
     prevScreenRef.current = gameState.screen;
   }, [gameState.screen, gameState.teams]);
 
-  // 25:00 Lesson Countdown Timer
+  // 25:00 Lesson Countdown Timer (automatically paused while reviewing Part 1: Konu Anlatımı)
   useEffect(() => {
-    if (gameState.screen !== 'playing' || gameState.timerPaused) return;
+    if (appSection !== 'game' || gameState.screen !== 'playing' || gameState.timerPaused) return;
     const interval = window.setInterval(() => {
       setGameState((prev) => {
         if (prev.screen !== 'playing' || prev.timerPaused) return prev;
@@ -140,7 +156,7 @@ export default function App() {
       });
     }, 1000);
     return () => window.clearInterval(interval);
-  }, [gameState.screen, gameState.timerPaused]);
+  }, [appSection, gameState.screen, gameState.timerPaused]);
 
   // Trigger Final Evaluation when 25:00 timer hits 00:00
   useEffect(() => {
@@ -157,16 +173,20 @@ export default function App() {
     if (areAllQuestionsCompleted(cur)) return;
     if (activeTeam.jailTurnsRemaining > 0) return;
 
-    const diceValue = diceRollerRef.current.roll();
+    const urlDice =
+      typeof window !== 'undefined'
+        ? Number(new URLSearchParams(window.location.search).get('dice'))
+        : NaN;
+    const diceValue =
+      Number.isInteger(urlDice) && urlDice >= 1 && urlDice <= 6
+        ? urlDice
+        : diceRollerRef.current.roll();
     const startTile = activeTeam.position;
     const charName =
-      CHARACTER_OPTIONS.find((c) => c.id === activeTeam.characterId)?.name ?? 'Etken';
+      CHARACTER_OPTIONS.find((c) => c.id === activeTeam.characterId)?.name ?? 'Benzetme';
     soundEngine.playDiceRoll();
 
-    if (diceRevealTimerRef.current !== null) {
-      window.clearTimeout(diceRevealTimerRef.current);
-      diceRevealTimerRef.current = null;
-    }
+    clearDiceTimers();
 
     setCurrentWalkStep(0);
     setGameState((prev) => ({
@@ -182,44 +202,32 @@ export default function App() {
       setGameState((prev) => ({
         ...prev,
         turnPhase: 'running_student',
-        bannerMessage: `${charName} (${activeTeam.name}) FPS kamerayla ${diceValue} adım yavaşça ilerliyor...`,
+        bannerMessage: `${charName} (${activeTeam.name}) FPS modunda ${diceValue} adım ilerliyor...`,
       }));
 
       const onArrival = () => {
         const latest = stateRef.current;
         const resolved = resolveDiceRoll(latest, diceValue);
-        const landedTile = BOARD_TILES[resolved.teams[resolved.activeTeamIndex].position];
+        const landedTeam = resolved.teams[resolved.activeTeamIndex];
+        const landedTile = BOARD_TILES[landedTeam.position];
 
         if (resolved.specialToast?.kind === 'start_bonus') {
           soundEngine.playStartLapBonus();
           sceneRef.current?.triggerBonusSparkle();
+          sceneRef.current?.playCharacterReaction(landedTeam.id, 'celebrate', 4200, true);
         } else if (resolved.specialToast?.kind === 'reward') {
           soundEngine.playRewardChime();
           sceneRef.current?.triggerBonusSparkle();
+          sceneRef.current?.playCharacterReaction(landedTeam.id, 'surprised', 4200, true);
         } else if (resolved.specialToast?.kind === 'jail') {
           soundEngine.playJailTone();
+          sceneRef.current?.playCharacterReaction(landedTeam.id, 'surprised', 3600, false);
+          sceneRef.current?.focusTile(landedTile.index);
+        } else {
+          sceneRef.current?.focusTile(landedTile.index);
         }
 
-        sceneRef.current?.focusTile(landedTile.index);
         setGameState(resolved);
-
-        // If all 5 questions were already completed for this team and chance card triggered
-        if (resolved.turnPhase === 'drawing_chance_card' && resolved.activeChanceCardId) {
-          const chance = CHANCE_CARDS.find((c) => c.id === resolved.activeChanceCardId);
-          soundEngine.playCardFlip();
-          const showChanceModal = () => {
-            setGameState((p) => ({ ...p, turnPhase: 'viewing_chance_card' }));
-          };
-          if (sceneRef.current) {
-            sceneRef.current.animateCardDraw(
-              'chance',
-              chance?.title ?? 'ŞANS KARTI',
-              showChanceModal
-            );
-          } else {
-            showChanceModal();
-          }
-        }
       };
 
       if (sceneRef.current) {
@@ -239,19 +247,30 @@ export default function App() {
     };
 
     const revealDiceResultThenWalk = () => {
+      const timings = getDiceCameraTimings(sceneRef.current?.isSoftwareGl ?? false);
       soundEngine.playRewardChime();
       setGameState((prev) => ({
         ...prev,
         turnPhase: 'showing_dice_result',
         lastDiceValue: diceValue,
-        bannerMessage: `Zar sonucu: ${diceValue}! ${charName} birazdan FPS görünümüyle ${diceValue} adım ilerleyecek...`,
+        bannerMessage: `Zar sonucu: ${diceValue}! Oyun tahtası açılıyor...`,
       }));
 
-      const pauseMs = sceneRef.current?.isSoftwareGl ? 750 : 1400;
+      // Stage 1 -> Stage 2: Hold close-up zoom on landed die, then pull back to full board overview
       diceRevealTimerRef.current = window.setTimeout(() => {
         diceRevealTimerRef.current = null;
-        startSlowFpsWalk();
-      }, pauseMs);
+        sceneRef.current?.focusOverview(true);
+        setGameState((prev) => ({
+          ...prev,
+          bannerMessage: `Tahta görünümü açıldı! ${charName} FPS moduna geçiyor (${diceValue} adım)...`,
+        }));
+
+        // Stage 2 -> Stage 3: Hold full board overview briefly, then swoop into FPS walking mode
+        boardOverviewTimerRef.current = window.setTimeout(() => {
+          boardOverviewTimerRef.current = null;
+          startSlowFpsWalk();
+        }, timings.boardOverviewMs);
+      }, timings.diceHoldMs);
     };
 
     if (sceneRef.current) {
@@ -259,7 +278,7 @@ export default function App() {
     } else {
       revealDiceResultThenWalk();
     }
-  }, []);
+  }, [clearDiceTimers]);
 
   const handleDrawQuestionCard = useCallback(() => {
     const cur = stateRef.current;
@@ -296,7 +315,7 @@ export default function App() {
     setGameState((prev) => ({
       ...prev,
       turnPhase: 'drawing_property_card',
-      bannerMessage: 'EMLAK KARTLARI destesinden gayrimenkul tapusu çekiliyor...',
+      bannerMessage: 'İLÇE KARTLARI destesinden yeni bir İstanbul ilçesi çekiliyor...',
     }));
 
     const revealProperty = () => {
@@ -304,9 +323,37 @@ export default function App() {
     };
 
     if (sceneRef.current) {
-      sceneRef.current.animateCardDraw('property', 'EMLAK KARTI', revealProperty);
+      sceneRef.current.animateCardDraw('property', 'İLÇE KARTI', revealProperty);
     } else {
       revealProperty();
+    }
+  }, []);
+
+  const handleDrawChanceCard = useCallback(() => {
+    const cur = stateRef.current;
+    if (cur.screen !== 'playing' || cur.turnPhase !== 'ready_to_draw_chance') return;
+    const chance = cur.activeChanceCardId
+      ? CHANCE_CARDS.find((c) => c.id === cur.activeChanceCardId)
+      : null;
+
+    soundEngine.playCardFlip();
+    setGameState((prev) => ({
+      ...prev,
+      turnPhase: 'drawing_chance_card',
+      bannerMessage: `ÖDÜL YA DA CEZA destesinden kart çekiliyor: ${chance?.title ?? 'Sürpriz Kart'}...`,
+    }));
+
+    const revealChance = () => {
+      setGameState((prev) => ({
+        ...prev,
+        turnPhase: 'viewing_chance_card',
+      }));
+    };
+
+    if (sceneRef.current) {
+      sceneRef.current.animateCardDraw('chance', 'ÖDÜL YA DA CEZA', revealChance);
+    } else {
+      revealChance();
     }
   }, []);
 
@@ -315,25 +362,20 @@ export default function App() {
     setGameState((prev) => ({ ...prev, inspectedTileIndex: tileIndex }));
   }, []);
 
-  const handleOpenBank = useCallback(() => {
-    sceneRef.current?.focusBank();
-    setShowBankModal(true);
-  }, []);
-
   const sceneCallbacksRef = useRef({
     onClickTile: handleClickTile,
     onClickQuestionDeck: handleDrawQuestionCard,
     onClickPropertyDeck: handleDrawPropertyCard,
+    onClickChanceDeck: handleDrawChanceCard,
     onClickDice: handleRollDice,
-    onClickBank: handleOpenBank,
     onClickVaultChest: () => setShowFinalReview(true),
   });
   sceneCallbacksRef.current = {
     onClickTile: handleClickTile,
     onClickQuestionDeck: handleDrawQuestionCard,
     onClickPropertyDeck: handleDrawPropertyCard,
+    onClickChanceDeck: handleDrawChanceCard,
     onClickDice: handleRollDice,
-    onClickBank: handleOpenBank,
     onClickVaultChest: () => setShowFinalReview(true),
   };
 
@@ -344,8 +386,8 @@ export default function App() {
       onClickTile: (idx) => sceneCallbacksRef.current.onClickTile(idx),
       onClickQuestionDeck: () => sceneCallbacksRef.current.onClickQuestionDeck(),
       onClickPropertyDeck: () => sceneCallbacksRef.current.onClickPropertyDeck(),
+      onClickChanceDeck: () => sceneCallbacksRef.current.onClickChanceDeck(),
       onClickDice: () => sceneCallbacksRef.current.onClickDice(),
-      onClickBank: () => sceneCallbacksRef.current.onClickBank(),
       onClickVaultChest: () => sceneCallbacksRef.current.onClickVaultChest(),
     });
     sceneRef.current = ctrl;
@@ -364,7 +406,8 @@ export default function App() {
     ctrl.setTitleOrbitMode(gameState.screen === 'title');
     ctrl.setDeckHighlights(
       gameState.turnPhase === 'ready_to_draw_question',
-      gameState.turnPhase === 'ready_to_draw_property'
+      gameState.turnPhase === 'ready_to_draw_property',
+      gameState.turnPhase === 'ready_to_draw_chance'
     );
     ctrl.syncTeams(
       gameState.teams,
@@ -380,12 +423,12 @@ export default function App() {
     ctrl.syncPurchasedAssets(ownedPairs);
   }, [gameState.screen, gameState.teams, gameState.turnPhase]);
 
-  // Keyboard shortcuts (Escape closes overlays or pauses game)
+  // Keyboard shortcuts (Escape closes overlays or pauses game when in Part 2)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (appSection !== 'game') return;
       if (e.key === 'Escape') {
-        if (showBankModal) setShowBankModal(false);
-        else if (showInventoryModal) setShowInventoryModal(false);
+        if (showInventoryModal) setShowInventoryModal(false);
         else if (showTeacherPanel) setShowTeacherPanel(false);
         else if (showFinalReview) setShowFinalReview(false);
         else if (gameState.screen === 'playing') {
@@ -397,7 +440,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showBankModal, showInventoryModal, showTeacherPanel, showFinalReview, gameState.screen]);
+  }, [appSection, showInventoryModal, showTeacherPanel, showFinalReview, gameState.screen]);
 
   const activeTeam = useMemo(() => getActiveTeam(gameState), [gameState]);
   const activeQuestion = useMemo(
@@ -426,10 +469,10 @@ export default function App() {
 
   // Game Handlers
   const handleStartGame = (setup: TeamSetupInput[]) => {
+    clearDiceTimers();
     diceRollerRef.current.reset();
     const fresh = createInitialGameState(setup, true, false);
     setGameState(fresh);
-    setShowBankModal(false);
     setShowInventoryModal(false);
     setShowTeacherPanel(false);
     setShowFinalReview(false);
@@ -443,10 +486,10 @@ export default function App() {
     const wasCorrect = next.lastQuestionOutcome?.correct ?? false;
     if (wasCorrect) {
       soundEngine.playCorrect();
-      sceneRef.current?.playCharacterReaction(activeTeam.id, 'celebrate');
+      sceneRef.current?.playCharacterReaction(activeTeam.id, 'celebrate', 5000, false);
     } else {
       soundEngine.playWrong();
-      sceneRef.current?.playCharacterReaction(activeTeam.id, 'sad');
+      sceneRef.current?.playCharacterReaction(activeTeam.id, 'sad', 5000, false);
     }
     setGameState(next);
   };
@@ -457,23 +500,26 @@ export default function App() {
     const active = getActiveTeam(cur);
     const next = timeoutQuestion(cur, cur.activeQuestionNumber);
     soundEngine.playWrong();
-    sceneRef.current?.playCharacterReaction(active.id, 'sad');
+    sceneRef.current?.playCharacterReaction(active.id, 'sad', 5000, false);
     setGameState(next);
   }, []);
 
   const handleContinueAfterQuestion = () => {
     const cur = stateRef.current;
+    const active = getActiveTeam(cur);
+    const wasCorrect = cur.lastQuestionOutcome?.correct ?? false;
     const queuedBonusId = cur.activeChanceCardId;
 
     if (queuedBonusId) {
       const bonusCard = CHANCE_CARDS.find((c) => c.id === queuedBonusId);
       soundEngine.playCardFlip();
+      sceneRef.current?.playCharacterReaction(active.id, 'surprised', 4200, false);
       setGameState((prev) => ({
         ...prev,
         activeQuestionNumber: null,
         lastQuestionOutcome: null,
         turnPhase: 'drawing_chance_card',
-        bannerMessage: `Bonus / İndirim / Ceza Kartı açılıyor: ${bonusCard?.title ?? 'Sürpriz Kart'}...`,
+        bannerMessage: `ÖDÜL YA DA CEZA kartı açılıyor: ${bonusCard?.title ?? 'Sürpriz Kart'}...`,
       }));
       const revealBonus = () => {
         setGameState((prev) => ({
@@ -482,26 +528,35 @@ export default function App() {
         }));
       };
       if (sceneRef.current) {
-        sceneRef.current.animateCardDraw('chance', 'BONUS & İNDİRİM', revealBonus);
+        sceneRef.current.animateCardDraw('chance', 'ÖDÜL YA DA CEZA', revealBonus);
       } else {
         revealBonus();
       }
       return;
     }
 
-    // Wrong answer or timeout: NO bonus card; ends game immediately if all questions are completed!
+    // Focus character's dynamic 3D smile or sad expression clearly on the open board after closing the card
+    sceneRef.current?.playCharacterReaction(
+      active.id,
+      wasCorrect ? 'celebrate' : 'sad',
+      4200,
+      true
+    );
     setGameState((prev) => completeQuestionWithoutBonus(prev));
   };
 
   const handleSkipBonusCard = () => {
+    sceneRef.current?.playCharacterReaction(activeTeam.id, 'celebrate', 3400, true);
     setGameState((prev) => skipBonusCardAfterQuestion(prev));
   };
 
   const handleResolveJail = (choice: 'pay' | 'wait') => {
     if (choice === 'pay') {
       soundEngine.playBankTransfer();
+      sceneRef.current?.playCharacterReaction(activeTeam.id, 'surprised', 3400, true);
     } else {
       soundEngine.playJailTone();
+      sceneRef.current?.playCharacterReaction(activeTeam.id, 'sad', 3800, true);
     }
     setGameState((prev) => resolveJailDecision(prev, choice));
   };
@@ -510,6 +565,7 @@ export default function App() {
     const next = purchaseActiveProperty(gameState);
     if (next.activePropertyAssetId === null) {
       soundEngine.playPurchase();
+      sceneRef.current?.playCharacterReaction(activeTeam.id, 'celebrate', 4200, true);
     }
     setGameState(next);
   };
@@ -521,9 +577,15 @@ export default function App() {
   const handleApplyChance = () => {
     if (activeChance?.effectType === 'lose_bp' || activeChance?.kind === 'ceza') {
       soundEngine.playWrong();
-      sceneRef.current?.playCharacterReaction(activeTeam.id, 'sad');
+      sceneRef.current?.playCharacterReaction(activeTeam.id, 'sad', 4400, true);
+    } else if (activeChance?.effectType === 'gain_bp') {
+      soundEngine.playRewardChime();
+      sceneRef.current?.triggerBonusSparkle();
+      sceneRef.current?.playCharacterReaction(activeTeam.id, 'celebrate', 4400, true);
     } else {
       soundEngine.playRewardChime();
+      sceneRef.current?.triggerBonusSparkle();
+      sceneRef.current?.playCharacterReaction(activeTeam.id, 'surprised', 4400, true);
     }
     setGameState((prev) => applyActiveChanceCard(prev));
   };
@@ -584,31 +646,45 @@ export default function App() {
       <div
         ref={canvasMountRef}
         data-testid="istanbul-3d-canvas"
-        aria-label="BİSEOPLY 3D İstanbul Oyun Tahtası"
+        aria-label="SÖZOPLY 3D İstanbul Oyun Tahtası"
         className="fixed inset-0 w-full h-full"
       />
 
-      {/* Screen 1: Title & 3-Team Setup */}
-      {gameState.screen === 'title' && <TeamSetupScreen onStartGame={handleStartGame} />}
-
-      {/* Screen 2: Active Playing HUD */}
-      {gameState.screen !== 'title' && (
-        <TopHud
-          teams={gameState.teams}
-          activeTeamIndex={gameState.activeTeamIndex}
-          remainingSeconds={gameState.remainingSeconds}
-          questionsSolved={gameState.answeredQuestions.length}
-          totalQuestions={QUESTION_CARDS.length}
-          muted={muted}
-          onToggleMute={handleToggleMute}
-          onPause={() =>
-            setGameState((p) => ({ ...p, screen: p.screen === 'paused' ? 'playing' : 'paused' }))
-          }
-          onResetCamera={() => sceneRef.current?.focusOverview()}
-        />
+      {/* Part 1: 5. Sınıf Türkçe · Söz Sanatları Konu Anlatımı */}
+      {appSection === 'lesson' && (
+        <LessonSection onStartGameSection={() => setAppSection('game')} />
       )}
 
-      {gameState.screen === 'playing' && (
+      {/* Part 2: SÖZOPLY 3D İstanbul Oyunu */}
+      {appSection === 'game' && (
+        <>
+          {/* Part 2 — Screen 1: Title & 3-Team Setup */}
+          {gameState.screen === 'title' && (
+            <TeamSetupScreen
+              onStartGame={handleStartGame}
+              onOpenLesson={() => setAppSection('lesson')}
+            />
+          )}
+
+          {/* Part 2 — Screen 2: Active Playing HUD */}
+          {gameState.screen !== 'title' && (
+            <TopHud
+              teams={gameState.teams}
+              activeTeamIndex={gameState.activeTeamIndex}
+              remainingSeconds={gameState.remainingSeconds}
+              questionsSolved={gameState.answeredQuestions.length}
+              totalQuestions={QUESTION_CARDS.length}
+              muted={muted}
+              onToggleMute={handleToggleMute}
+              onPause={() =>
+                setGameState((p) => ({ ...p, screen: p.screen === 'paused' ? 'playing' : 'paused' }))
+              }
+              onResetCamera={() => sceneRef.current?.focusOverview()}
+              onOpenLesson={() => setAppSection('lesson')}
+            />
+          )}
+
+          {gameState.screen === 'playing' && (
         <BottomDock
           activeTeam={activeTeam}
           turnPhase={gameState.turnPhase}
@@ -619,8 +695,8 @@ export default function App() {
           onRollDice={handleRollDice}
           onDrawQuestionCard={handleDrawQuestionCard}
           onDrawPropertyCard={handleDrawPropertyCard}
+          onDrawChanceCard={handleDrawChanceCard}
           onNextTeam={handleNextTeam}
-          onOpenBank={handleOpenBank}
           onOpenInventory={() => setShowInventoryModal(true)}
           onOpenTeacherPanel={() => setShowTeacherPanel(true)}
           onOpenFinalReview={() => setShowFinalReview(true)}
@@ -658,11 +734,11 @@ export default function App() {
           />
         )}
 
-      {/* Jail Bail (50 BP) vs 1-Turn Wait Decision Modal */}
+      {/* Bekleme Karesi (50 TL Öde veya 1 Tur Bekle) */}
       {gameState.screen === 'playing' && gameState.turnPhase === 'jail_decision' && (
         <JailDecisionModal
           team={activeTeam}
-          tileName={BOARD_TILES[activeTeam.position]?.name ?? 'Hapis Karesi'}
+          tileName={BOARD_TILES[activeTeam.position]?.name ?? 'Bekleme Karesi'}
           onPayBail={() => handleResolveJail('pay')}
           onWaitTurn={() => handleResolveJail('wait')}
         />
@@ -693,21 +769,19 @@ export default function App() {
           />
         )}
 
-      {/* Real Estate Purchase Card Modal (Vehicles Removed) */}
+      {/* Istanbul District Purchase Card Modal */}
       {gameState.screen === 'playing' &&
         gameState.turnPhase === 'viewing_property_card' &&
-        activeProperty &&
-        !showBankModal && (
+        activeProperty && (
           <PropertyCardModal
             asset={activeProperty}
             team={activeTeam}
             onPurchase={handlePurchaseProperty}
             onSkip={handleSkipProperty}
-            onOpenBankForFunds={handleOpenBank}
           />
         )}
 
-      {/* Post-Question Bonus, Discount & Penalty Card Modal (Only on correct answers) */}
+      {/* Ödül ya da Ceza Card Modal */}
       {gameState.screen === 'playing' &&
         gameState.turnPhase === 'viewing_chance_card' &&
         activeChance && (
@@ -721,46 +795,10 @@ export default function App() {
           />
         )}
 
-      {/* Bank, Loans & Real Estate Trade Modal */}
-      {showBankModal && (
-        <BankFinanceModal
-          teams={gameState.teams}
-          activeTeamIndex={gameState.activeTeamIndex}
-          peerLoans={gameState.peerLoans}
-          financeLog={gameState.financeLog}
-          onTakeBankLoan={(idx) => {
-            soundEngine.playBankTransfer();
-            setGameState((p) => takeBankLoan(p, idx));
-          }}
-          onRepayBankLoan={(idx) => {
-            soundEngine.playBankTransfer();
-            setGameState((p) => repayBankLoan(p, idx));
-          }}
-          onExecutePeerLoan={(lender, borrower, principal, repay) => {
-            soundEngine.playBankTransfer();
-            setGameState((p) => executePeerLoan(p, lender, borrower, principal, repay));
-          }}
-          onRepayPeerLoan={(loanId) => {
-            soundEngine.playBankTransfer();
-            setGameState((p) => repayPeerLoan(p, loanId));
-          }}
-          onSellToBank={(sellerIdx, assetId) => {
-            soundEngine.playBankTransfer();
-            setGameState((p) => sellAssetToBank(p, sellerIdx, assetId));
-          }}
-          onTradeBetweenTeams={(sellerIdx, buyerIdx, assetId, price) => {
-            soundEngine.playPurchase();
-            setGameState((p) => tradeAssetBetweenTeams(p, sellerIdx, buyerIdx, assetId, price));
-          }}
-          onClose={() => setShowBankModal(false)}
-        />
-      )}
-
-      {/* Team Inventory Modal */}
+      {/* Team Districts & Balance Modal */}
       {showInventoryModal && (
         <TeamInventoryModal
           teams={gameState.teams}
-          peerLoans={gameState.peerLoans}
           onClose={() => setShowInventoryModal(false)}
         />
       )}
@@ -798,19 +836,20 @@ export default function App() {
               teams: p.teams.map((t, i) =>
                 i === idx ? { ...t, bp: Math.max(0, t.bp + delta) } : t
               ),
-              bannerMessage: `Öğretmen ${p.teams[idx].name} bakiyesini ${delta > 0 ? '+' : ''}${delta} BP güncelledi.`,
+              bannerMessage: `Öğretmen ${p.teams[idx].name} kasasını ${delta > 0 ? '+' : ''}${delta} TL güncelledi.`,
             }));
           }}
           onClearJail={(idx) =>
             setGameState((p) => ({
               ...p,
               teams: p.teams.map((t, i) => (i === idx ? { ...t, jailTurnsRemaining: 0 } : t)),
-              bannerMessage: `Öğretmen ${p.teams[idx].name} takımının hapis cezasını kaldırdı.`,
+              bannerMessage: `Öğretmen ${p.teams[idx].name} takımının bekleme turunu kaldırdı.`,
             }))
           }
           onSkipQuestion={handleTeacherSkipQuestion}
           onPrevQuestion={handleTeacherPrevQuestion}
           onRestartGame={() => {
+            clearDiceTimers();
             setShowTeacherPanel(false);
             diceRollerRef.current.reset();
             sceneRef.current?.resetCelebration();
@@ -820,7 +859,7 @@ export default function App() {
         />
       )}
 
-      {/* Son 5 Dakika: Fiilde Çatı Değerlendirme Paneli */}
+      {/* Son 5 Dakika: Söz Sanatları Değerlendirme Paneli */}
       {showFinalReview && (
         <EvidenceVaultModal
           answeredQuestions={gameState.answeredQuestions}
@@ -835,6 +874,7 @@ export default function App() {
         <PauseModal
           onResume={() => setGameState((p) => ({ ...p, screen: 'playing' }))}
           onReturnToSetup={() => {
+            clearDiceTimers();
             diceRollerRef.current.reset();
             sceneRef.current?.resetCelebration();
             setGameState(createInitialGameState(DEFAULT_TEAMS_SETUP, false, false));
@@ -848,12 +888,15 @@ export default function App() {
           teams={gameState.teams}
           allQuestionsCompleted={areAllQuestionsCompleted(gameState)}
           onRestart={() => {
+            clearDiceTimers();
             diceRollerRef.current.reset();
             sceneRef.current?.resetCelebration();
             setGameState(createInitialGameState(DEFAULT_TEAMS_SETUP, false, false));
           }}
           onInspectBoard={() => setGameState((p) => ({ ...p, screen: 'playing' }))}
         />
+      )}
+        </>
       )}
     </main>
   );

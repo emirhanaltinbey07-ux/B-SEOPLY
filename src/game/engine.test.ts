@@ -5,6 +5,7 @@ import {
   applyActiveChanceCard,
   areAllQuestionsCompleted,
   completeQuestionWithoutBonus,
+  computeEffectiveAssetPrice,
   createFairDiceRoller,
   createInitialGameState,
   drawPropertyCard,
@@ -63,20 +64,24 @@ test('24-tile track has exact composition: 1 start, 11 Istanbul locations (incl.
   ]);
 });
 
-test('all 15 Turkish Fiilde Çatı questions match exact official answer key 1..15, 60s (1 min) timer, +50 BP reward, and vehicles removed', () => {
-  assert.equal(QUESTION_CARDS.length, 15);
-  assert.equal(QUESTIONS_PER_TEAM, 5);
-  assert.equal(QUESTION_TIME_LIMIT_SECONDS, 60);
+test('all 20 Turkish Söz Sanatları questions match exact official answer key 1..20, 120s (2 min) timer, explanations, +50 TL reward, and vehicles removed', () => {
+  assert.equal(QUESTION_CARDS.length, 20);
+  assert.equal(QUESTIONS_PER_TEAM, 7);
+  assert.equal(QUESTION_TIME_LIMIT_SECONDS, 120);
   assert.equal(CORRECT_ANSWER_BP, 50);
-  const key = ['D', 'A', 'C', 'C', 'D', 'D', 'A', 'D', 'B', 'A', 'A', 'D', 'C', 'B', 'A'];
-  assert.equal(Object.keys(OFFICIAL_ANSWER_KEY).length, 15);
+  const key = [
+    'B', 'D', 'A', 'D', 'B', 'C', 'A', 'D', 'A', 'D',
+    'D', 'A', 'D', 'B', 'A', 'C', 'C', 'D', 'D', 'C',
+  ];
+  assert.equal(Object.keys(OFFICIAL_ANSWER_KEY).length, 20);
   QUESTION_CARDS.forEach((q, idx) => {
     assert.equal(q.number, idx + 1);
     assert.equal(q.correctAnswer, key[idx]);
     assert.equal(OFFICIAL_ANSWER_KEY[q.number], key[idx]);
+    assert.ok(q.explanation.trim().length > 20, `Question ${q.number} must have a clear explanation`);
   });
 
-  // Zero vehicles in PROPERTY_ASSETS — strictly real estate (emlak)!
+  // Zero vehicles in PROPERTY_ASSETS — strictly İstanbul districts ('emlak')!
   assert.ok(PROPERTY_ASSETS.length >= 8);
   assert.equal(PROPERTY_ASSETS.every((a) => a.kind === 'emlak'), true);
 });
@@ -103,17 +108,19 @@ test('all 3 teams start at BAŞLANGIÇ (tile 0) with exact 100 BP, initial depar
   assert.equal(state.teams[0].bp, 150);
 });
 
-test('jail requires 50 BP bail to continue OR waiting 1 turn without solving a question', () => {
-  // Branch 1: Pay 50 BP -> deducts 50 BP and proceeds to question!
+test('jail requires 10 TL bail to solve question immediately OR waiting 1 turn without solving a question', () => {
+  assert.equal(JAIL_BAIL_BP, 10);
+
+  // Branch 1: Pay 10 TL -> deducts 10 TL (100 -> 90) and proceeds to question!
   let payState = createInitialGameState(undefined, true, false);
-  payState = resolveDiceRoll(payState, 6); // Tile 6 is HAPİS
+  payState = resolveDiceRoll(payState, 6); // Tile 6 is HAPİS / BEKLEME
   assert.equal(payState.turnPhase, 'jail_decision');
   payState = resolveJailDecision(payState, 'pay');
-  assert.equal(payState.teams[0].bp, 100 - JAIL_BAIL_BP);
+  assert.equal(payState.teams[0].bp, 90);
   assert.equal(payState.teams[0].jailTurnsRemaining, 0);
   assert.equal(payState.turnPhase, 'ready_to_draw_question');
 
-  // Branch 2: Don't pay -> 0 BP lost, skips question now AND waits 1 full turn with no question!
+  // Branch 2: Don't pay -> 0 TL lost, skips question now AND waits 1 full turn with no question!
   let waitState = createInitialGameState(undefined, true, false);
   waitState = resolveDiceRoll(waitState, 6);
   waitState = resolveJailDecision(waitState, 'wait');
@@ -121,6 +128,7 @@ test('jail requires 50 BP bail to continue OR waiting 1 turn without solving a q
   assert.equal(waitState.teams[0].jailTurnsRemaining, 1);
   assert.equal(waitState.turnPhase, 'turn_complete');
   assert.equal(waitState.activeQuestionNumber, null);
+  assert.equal(waitState.specialToast?.subtitle.includes('10 TL'), true);
 
   waitState = advanceToNextTeam(waitState); // Team 1
   waitState = advanceToNextTeam(waitState); // Team 2
@@ -129,6 +137,7 @@ test('jail requires 50 BP bail to continue OR waiting 1 turn without solving a q
   assert.equal(waitState.teams[0].jailTurnsRemaining, 0);
   assert.equal(waitState.turnPhase, 'turn_complete'); // No roll, no question!
   assert.equal(waitState.activeQuestionNumber, null);
+  assert.equal(waitState.specialToast?.subtitle.includes('10 TL'), true);
 });
 
 test('bank loan is strictly ONE-TIME per team per game even after repayment; peer loan & trade still work', () => {
@@ -214,21 +223,21 @@ test('correct answer gives +50 BP + optional Bonus/Ceza card (or direct skip); w
   assert.equal(state.activeChanceCardId, null);
 });
 
-test('all 15 questions can be played cleanly across 3 teams (5 each) and victory ranking ranks strictly by Gayrimenkul count', () => {
+test('all 20 questions can be played cleanly across 3 teams (7+7+6) and victory ranking ranks strictly by İlçe count', () => {
   let state = createInitialGameState(undefined, true, false);
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 20; i++) {
     const qNum = state.questionDeckQueue[0];
     state = submitQuestionAnswer(state, qNum, OFFICIAL_ANSWER_KEY[qNum]);
     state = advanceToNextTeam(state);
   }
   assert.equal(state.questionDeckQueue.length, 0);
-  assert.equal(state.answeredQuestions.length, 15);
+  assert.equal(state.answeredQuestions.length, 20);
   assert.equal(areAllQuestionsCompleted(state), true);
   assert.equal(state.screen, 'gameover');
   assert.equal(state.timerPaused, true);
   assert.deepEqual(
     state.teams.map((t) => t.questionsAnswered),
-    [5, 5, 5]
+    [7, 7, 6]
   );
 
   const customTeams = state.teams.map((t, idx) => {
@@ -243,10 +252,10 @@ test('all 15 questions can be played cleanly across 3 teams (5 each) and victory
   assert.equal(formatCountdown(TOTAL_GAME_SECONDS), '25:00');
 });
 
-test('game automatically transitions to gameover when the 15th question completes (wrong/timeout, property purchase/skip, or extra-roll card)', () => {
-  // Play first 14 questions cleanly
+test('game automatically transitions to gameover when the 20th question completes (wrong/timeout, property purchase/skip, or extra-roll card)', () => {
+  // Play first 19 questions cleanly
   let base = createInitialGameState(undefined, true, false);
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 19; i++) {
     const qNum = base.questionDeckQueue[0];
     base = submitQuestionAnswer(base, qNum, OFFICIAL_ANSWER_KEY[qNum]);
     base = advanceToNextTeam(base);
@@ -300,18 +309,17 @@ test('game automatically transitions to gameover when the 15th question complete
   assert.equal(blockedRoll.screen, 'gameover');
 });
 
-test('team characters are Etken, Edilgen, and Dönüşlü with exact requested traits and defaults', () => {
+test('team characters are only Benzetme (Cesur Aslan) and Kişileştirme (Neşeli Bulut) with exact avatar IDs and defaults', () => {
   assert.deepEqual(
-    CHARACTER_OPTIONS.map((c) => ({ id: c.id, name: c.name })),
+    CHARACTER_OPTIONS.map((c) => ({ id: c.id, name: c.name, role: c.role })),
     [
-      { id: 'etken', name: 'Etken' },
-      { id: 'edilgen', name: 'Edilgen' },
-      { id: 'donuslu', name: 'Dönüşlü' },
+      { id: 'etken', name: 'Benzetme', role: 'Cesur Aslan Maskotu' },
+      { id: 'edilgen', name: 'Kişileştirme', role: 'Neşeli Bulut Maskotu' },
     ]
   );
   assert.deepEqual(
     DEFAULT_TEAMS_SETUP.map((t) => t.characterId),
-    ['etken', 'edilgen', 'donuslu']
+    ['etken', 'edilgen', 'etken']
   );
 });
 
@@ -341,4 +349,40 @@ test('fair cryptographic dice roller covers 1..6 uniformly without back-to-back 
   const seqC = Array.from({ length: 12 }, () => roller3.roll()).join(',');
   assert.ok(new Set([seqA, seqB, seqC]).size >= 2);
 });
+
+test('discount cards use fixed TL amounts (25 TL / 35 TL) with zero percentage wording and subtract exact TL', () => {
+  for (const card of CHANCE_CARDS) {
+    assert.equal(card.title.includes('%'), false, `Card title should not contain %: ${card.title}`);
+    assert.equal(card.description.includes('%'), false, `Card description should not contain %: ${card.description}`);
+  }
+
+  const card25 = CHANCE_CARDS.find((c) => c.id === 'emlak-indirimi-25');
+  const card35 = CHANCE_CARDS.find((c) => c.id === 'super-emlak-indirimi-35');
+  assert.ok(card25 && card25.value === 25);
+  assert.ok(card35 && card35.value === 35);
+  assert.ok(card25.description.includes('25 TL indirim kazandınız'));
+  assert.ok(card35.description.includes('35 TL indirim kazandınız'));
+
+  let state = createInitialGameState(undefined, true, false);
+  state = applyActiveChanceCard({
+    ...state,
+    activeChanceCardId: card25.id,
+    pendingPropertyDrawAfterBonus: true,
+  });
+  assert.equal(state.teams[0].nextPropertyDiscount, 25);
+  assert.equal(state.bannerMessage.includes('%'), false);
+  assert.equal(state.bannerMessage.includes('25 TL indirim'), true);
+
+  const asset = PROPERTY_ASSETS.find((a) => a.id === 'galata-dairesi')!; // price 75
+  assert.equal(computeEffectiveAssetPrice(state.teams[0], asset), asset.price - 25);
+
+  // Applying 35 TL discount subtracts 35 TL cleanly
+  const state35 = applyActiveChanceCard({
+    ...createInitialGameState(undefined, true, false),
+    activeChanceCardId: card35.id,
+  });
+  assert.equal(state35.teams[0].nextPropertyDiscount, 35);
+  assert.equal(computeEffectiveAssetPrice(state35.teams[0], asset), asset.price - 35);
+});
+
 

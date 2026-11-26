@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BookOpenCheck, CheckCircle2, Trophy, X, XCircle } from 'lucide-react';
-import { FIILDE_CATI_SUMMARY, QUESTION_CARDS } from '../game/data';
+import { QUESTION_CARDS, SOZ_SANATLARI_SUMMARY } from '../game/data';
 import { getRankedTeams } from '../game/engine';
 import { AnsweredQuestionRecord, Team } from '../game/types';
 
@@ -12,8 +12,7 @@ interface EvidenceVaultModalProps {
 }
 
 /**
- * Son 5 Dakika: Fiilde Çatı Değerlendirme & Özet Paneli
- * Reviews ONLY the 15 user-provided questions and Fiilde Çatı rules (ZERO new test questions!)
+ * Son 5 Dakika: Söz Sanatları Değerlendirme & Özet Paneli
  */
 export const EvidenceVaultModal: React.FC<EvidenceVaultModalProps> = ({
   answeredQuestions,
@@ -33,19 +32,19 @@ export const EvidenceVaultModal: React.FC<EvidenceVaultModalProps> = ({
       aria-modal="true"
       aria-labelledby="final-review-title"
     >
-      <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border-4 border-[#1a5f8a] bg-[#fcf9f2] shadow-2xl overflow-hidden">
+      <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border-4 border-[#6d44a6] bg-[#fcf9f2] shadow-2xl overflow-hidden screen-fade-in">
         {/* Header */}
-        <div className="bg-[#1a5f8a] px-6 py-4 text-white flex items-center justify-between gap-3">
+        <div className="bg-[#6d44a6] px-6 py-4 text-white flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/15">
               <BookOpenCheck className="h-6 w-6" />
             </span>
             <div>
-              <div className="text-xs font-extrabold uppercase tracking-wider text-[#cfe9fa]">
-                SON 5 DAKİKA · FİİLDE ÇATI DEĞERLENDİRME VE FİNAL
+              <div className="text-xs font-extrabold uppercase tracking-wider text-[#eadcfb]">
+                SÖZOPLY · SÖZ SANATLARI ÖZETİ VE FİNAL
               </div>
               <h2 id="final-review-title" className="font-display text-2xl font-extrabold">
-                Fiilde Çatı Konu Özeti &amp; Çözülen {QUESTION_CARDS.length} Soru
+                Söz Sanatları Konu Özeti &amp; Çözülen {QUESTION_CARDS.length} Soru
               </h2>
             </div>
           </div>
@@ -61,25 +60,25 @@ export const EvidenceVaultModal: React.FC<EvidenceVaultModalProps> = ({
         </div>
 
         {/* Tab Strip */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 bg-[#f2ece0] border-b border-[#dfd3be]">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 bg-[#f4effa] border-b border-[#dfd3ee]">
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setView('summary')}
               className={`rounded-xl px-4 py-2 text-xs md:text-sm font-extrabold cursor-pointer ${
                 view === 'summary'
-                  ? 'bg-[#1a5f8a] text-white'
+                  ? 'bg-[#6d44a6] text-white'
                   : 'bg-white text-[#28445c] border border-[#d6cbb6]'
               }`}
             >
-              Fiilde Çatı Özet Tablosu
+              Söz Sanatları Özet Tablosu
             </button>
             <button
               type="button"
               onClick={() => setView('questions')}
               className={`rounded-xl px-4 py-2 text-xs md:text-sm font-extrabold cursor-pointer ${
                 view === 'questions'
-                  ? 'bg-[#1a5f8a] text-white'
+                  ? 'bg-[#6d44a6] text-white'
                   : 'bg-white text-[#28445c] border border-[#d6cbb6]'
               }`}
             >
@@ -88,7 +87,7 @@ export const EvidenceVaultModal: React.FC<EvidenceVaultModalProps> = ({
           </div>
 
           <div className="text-xs font-extrabold text-[#146c43] bg-[#e8f8ef] border border-[#9fd7b8] rounded-lg px-3 py-1.5">
-            Şu An Lider: {leader.name} ({leader.realEstateCount} Gayrimenkul)
+            Şu An Lider: {leader.name} ({leader.realEstateCount} İlçe)
           </div>
         </div>
 
@@ -96,12 +95,12 @@ export const EvidenceVaultModal: React.FC<EvidenceVaultModalProps> = ({
         <div className="p-5 overflow-y-auto space-y-3 flex-1">
           {view === 'summary' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {FIILDE_CATI_SUMMARY.map((item) => (
+              {SOZ_SANATLARI_SUMMARY.map((item) => (
                 <div
                   key={item.name}
                   className="rounded-xl border border-[#dcd2be] bg-white p-4 shadow-xs space-y-1.5"
                 >
-                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#0c6b9a]">
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#6d44a6]">
                     {item.group}
                   </div>
                   <h3 className="font-display text-lg font-extrabold text-[#0f2942]">
@@ -173,7 +172,7 @@ export const EvidenceVaultModal: React.FC<EvidenceVaultModalProps> = ({
         {/* Footer CTA */}
         <div className="px-6 py-4 bg-[#f2ece0] border-t border-[#dfd3be] flex flex-wrap items-center justify-between gap-3">
           <div className="text-xs font-bold text-[#3f5970]">
-            Final sıralaması yalnızca <span className="text-[#146c43] font-black">Gayrimenkul sayısına</span> göre belirlenir.
+            Final sıralaması en çok <span className="text-[#146c43] font-black">İlçe sayısına</span> göre belirlenir.
           </div>
           <div className="flex items-center gap-2.5">
             <button
