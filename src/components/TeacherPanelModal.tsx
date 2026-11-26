@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import {
-  Clock,
+  BookOpenCheck,
   Eye,
   EyeOff,
-  FastForward,
   KeyRound,
-  Pause,
-  Play,
   RotateCcw,
   ShieldCheck,
   SkipBack,
@@ -16,14 +13,11 @@ import {
   X,
 } from 'lucide-react';
 import { OFFICIAL_ANSWER_KEY, QUESTION_CARDS } from '../game/data';
-import { formatCountdown } from '../game/engine';
 import { GameState } from '../game/types';
 
 interface TeacherPanelModalProps {
   gameState: GameState;
-  onToggleTimerPause: () => void;
-  onResetTimer: () => void;
-  onJumpToFinal5Min: () => void;
+  onOpenFinalReview: () => void;
   onSwitchActiveTeam: (teamIdx: number) => void;
   onAdjustBp: (teamIdx: number, delta: number) => void;
   onClearJail: (teamIdx: number) => void;
@@ -35,9 +29,7 @@ interface TeacherPanelModalProps {
 
 export const TeacherPanelModal: React.FC<TeacherPanelModalProps> = ({
   gameState,
-  onToggleTimerPause,
-  onResetTimer,
-  onJumpToFinal5Min,
+  onOpenFinalReview,
   onSwitchActiveTeam,
   onAdjustBp,
   onClearJail,
@@ -84,84 +76,51 @@ export const TeacherPanelModal: React.FC<TeacherPanelModalProps> = ({
         </div>
 
         <div className="p-5 overflow-y-auto space-y-4">
-          {/* Row 1: 25:00 Timer & Question Deck Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            <div className="rounded-xl border border-[#dfd3be] bg-white p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase text-[#3a2863]">
-                  <Clock className="h-4 w-4" />
-                  Ders Zamanlayıcısı (25:00)
-                </span>
-                <span className="font-mono-num text-lg font-black text-[#0f2942]">
-                  {formatCountdown(gameState.remainingSeconds)}
-                </span>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={onToggleTimerPause}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#0c6b9a] hover:bg-[#095378] px-3 py-2 text-xs font-extrabold text-white cursor-pointer"
-                >
-                  {gameState.timerPaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
-                  {gameState.timerPaused ? 'Devam Et' : 'Duraklat'}
-                </button>
-                <button
-                  type="button"
-                  onClick={onResetTimer}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#eef2f6] hover:bg-[#dce4ec] px-3 py-2 text-xs font-bold text-[#0f2942] cursor-pointer"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  25:00 Sıfırla
-                </button>
-                <button
-                  type="button"
-                  onClick={onJumpToFinal5Min}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#fef6e2] hover:bg-[#fceac2] border border-[#e3c274] px-3 py-2 text-xs font-extrabold text-[#7d5208] cursor-pointer"
-                >
-                  <FastForward className="h-3.5 w-3.5" />
-                  Son 5 Dk’ya Geç
-                </button>
-              </div>
+          {/* Row 1: Question Deck Controls */}
+          <div className="rounded-xl border border-[#dfd3be] bg-white p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-extrabold uppercase text-[#3a2863]">
+                {QUESTION_CARDS.length} Soruluk Deste Kontrolü
+              </span>
+              <span className="font-mono-num text-xs font-extrabold text-[#526d85]">
+                Kalan: {gameState.questionDeckQueue.length}/{QUESTION_CARDS.length} · Sıradaki: Soru{' '}
+                {gameState.questionDeckQueue[0] ?? '-'}
+              </span>
             </div>
 
-            <div className="rounded-xl border border-[#dfd3be] bg-white p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase text-[#3a2863]">
-                  {QUESTION_CARDS.length} Soruluk Deste Kontrolü
-                </span>
-                <span className="font-mono-num text-xs font-extrabold text-[#526d85]">
-                  Kalan: {gameState.questionDeckQueue.length}/{QUESTION_CARDS.length} · Sıradaki: Soru{' '}
-                  {gameState.questionDeckQueue[0] ?? '-'}
-                </span>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={onPrevQuestion}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#eef2f6] hover:bg-[#dce4ec] px-3 py-2 text-xs font-bold text-[#0f2942] cursor-pointer"
-                >
-                  <SkipBack className="h-3.5 w-3.5" />
-                  Önceki Soruya Dön
-                </button>
-                <button
-                  type="button"
-                  onClick={onSkipQuestion}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#eef2f6] hover:bg-[#dce4ec] px-3 py-2 text-xs font-bold text-[#0f2942] cursor-pointer"
-                >
-                  <SkipForward className="h-3.5 w-3.5" />
-                  Sıradaki Soruyu Atla
-                </button>
-                <button
-                  type="button"
-                  onClick={onRestartGame}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#fdeeee] hover:bg-[#fbdcdc] border border-[#e8a5a5] px-3 py-2 text-xs font-extrabold text-[#a82418] cursor-pointer"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  Oyunu Sıfırla
-                </button>
-              </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={onPrevQuestion}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#eef2f6] hover:bg-[#dce4ec] px-3 py-2 text-xs font-bold text-[#0f2942] cursor-pointer"
+              >
+                <SkipBack className="h-3.5 w-3.5" />
+                Önceki Soruya Dön
+              </button>
+              <button
+                type="button"
+                onClick={onSkipQuestion}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#eef2f6] hover:bg-[#dce4ec] px-3 py-2 text-xs font-bold text-[#0f2942] cursor-pointer"
+              >
+                <SkipForward className="h-3.5 w-3.5" />
+                Sıradaki Soruyu Atla
+              </button>
+              <button
+                type="button"
+                onClick={onOpenFinalReview}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#eef5f0] hover:bg-[#dcece1] border border-[#b7dac2] px-3 py-2 text-xs font-extrabold text-[#175838] cursor-pointer"
+              >
+                <BookOpenCheck className="h-3.5 w-3.5" />
+                Özet &amp; Final
+              </button>
+              <button
+                type="button"
+                onClick={onRestartGame}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#fdeeee] hover:bg-[#fbdcdc] border border-[#e8a5a5] px-3 py-2 text-xs font-extrabold text-[#a82418] cursor-pointer"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Oyunu Sıfırla
+              </button>
             </div>
           </div>
 

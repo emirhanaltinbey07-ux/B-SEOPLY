@@ -17,7 +17,6 @@ import {
   QUESTIONS_PER_TEAM,
   REWARD_TILE_BP,
   START_PASS_BONUS_BP,
-  TOTAL_GAME_SECONDS,
   WRONG_ANSWER_BP,
 } from './data';
 import {
@@ -197,8 +196,6 @@ export function createInitialGameState(
       },
     ],
     specialToast: null,
-    remainingSeconds: TOTAL_GAME_SECONDS,
-    timerPaused: false,
     bannerMessage: `${teams[0].name} (${INITIAL_TEAM_BP} TL · BAŞLANGIÇ) başlıyor! Zar atarak İstanbul turuna çık.`,
     lastQuestionOutcome: null,
   };
@@ -229,7 +226,6 @@ export function finishGameOnAllQuestionsCompleted(state: GameState): GameState {
     ...state,
     screen: 'gameover',
     turnPhase: 'turn_complete',
-    timerPaused: true,
     activeQuestionNumber: null,
     activePropertyAssetId: null,
     activeChanceCardId: null,

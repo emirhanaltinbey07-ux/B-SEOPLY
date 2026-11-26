@@ -178,8 +178,6 @@ export interface GameState {
   peerLoans: PeerLoan[];
   financeLog: FinanceLogEntry[];
   specialToast: SpecialEventToast | null;
-  remainingSeconds: number; // 900 -> 0 (15 min)
-  timerPaused: boolean;
   bannerMessage: string;
   lastQuestionOutcome: {
     questionNumber: number;

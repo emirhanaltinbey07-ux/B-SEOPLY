@@ -14,6 +14,7 @@ export type { CharacterAnimMode, CharacterExpression, CharacterReactionMode };
  * Articulated Stylized 3D Storybook Mascots:
  * 1. 'etken'   -> Benzetme: Cesur Aslan Maskotu ("Aslan gibi cesur!")
  * 2. 'edilgen' -> Kişileştirme: Neşeli Bulut Maskotu ("Gülümseyen canlı bulut!")
+ * 3. 'donuslu' -> Söz Ustası: Bilge Baykuş Maskotu ("Söz sanatlarının bilge rehberi!")
  *
  * Articulated hip/shoulder pivots and a full 3D facial rig drive running stride,
  * joyful smiling celebration ('celebrate'), sad downturn ('sad'), startled surprise ('surprised'),
@@ -318,6 +319,7 @@ export function createStylizedCharacterFigurine(
   root.add(shadow);
 
   const isLion = characterId === 'etken';
+  const isCloud = characterId === 'edilgen';
   const sneakerMat = new THREE.MeshStandardMaterial({ color: 0xf8f8f6, roughness: 0.38 });
   const soleMat = new THREE.MeshStandardMaterial({ color: 0x35424f, roughness: 0.65 });
 
@@ -326,8 +328,8 @@ export function createStylizedCharacterFigurine(
   root.add(bodyRoot);
 
   const legMat = new THREE.MeshStandardMaterial({
-    color: isLion ? 0xf2b94e : 0x2563eb,
-    roughness: isLion ? 0.66 : 0.56,
+    color: isLion ? 0xf2b94e : isCloud ? 0x2563eb : 0xe69524,
+    roughness: isLion ? 0.66 : isCloud ? 0.56 : 0.48,
   });
 
   const buildLegPivot = (xPos: number): THREE.Group => {
@@ -525,7 +527,7 @@ export function createStylizedCharacterFigurine(
       paw.castShadow = true;
       pivot.add(paw);
     }
-  } else {
+  } else if (isCloud) {
     // KİŞİLEŞTİRME ('edilgen'): Neşeli Bulut Maskotu ("Gülümseyen canlı bulut!")
     const cloudWhiteMat = new THREE.MeshStandardMaterial({
       color: 0xf7fbff,
@@ -667,6 +669,186 @@ export function createStylizedCharacterFigurine(
       mitten.position.set(dir * 0.03, -0.4, 0.04);
       mitten.castShadow = true;
       pivot.add(mitten);
+    }
+  } else {
+    // SÖZ USTASI ('donuslu'): Bilge Baykuş Maskotu ("Söz sanatlarının bilge rehberi!")
+    const featherTealMat = new THREE.MeshStandardMaterial({ color: 0x168a73, roughness: 0.66 });
+    const featherDeepMat = new THREE.MeshStandardMaterial({ color: 0x0e5c4e, roughness: 0.72 });
+    const creamFeatherMat = new THREE.MeshStandardMaterial({ color: 0xf5fbf7, roughness: 0.64 });
+    const mintFeatherMat = new THREE.MeshStandardMaterial({ color: 0xc8eee2, roughness: 0.62 });
+    const beakMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      roughness: 0.32,
+      metalness: 0.14,
+    });
+    const goldMetalMat = new THREE.MeshStandardMaterial({
+      color: 0xf6c945,
+      roughness: 0.22,
+      metalness: 0.68,
+    });
+    const capMat = new THREE.MeshStandardMaterial({ color: 0x4c2882, roughness: 0.58 });
+
+    // Plush rounded owl head
+    const headSphere = new THREE.Mesh(new THREE.SphereGeometry(0.4, 18, 16), featherTealMat);
+    headSphere.scale.set(1.06, 0.96, 0.96);
+    headSphere.castShadow = true;
+    headGroup.add(headSphere);
+
+    // Heart-shaped bright cream facial disc framing the eyes & dynamic mouth cleanly
+    for (const sx of [-1, 1]) {
+      const disc = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 12), creamFeatherMat);
+      disc.position.set(sx * 0.115, 0.015, 0.245);
+      disc.scale.set(1.02, 1.08, 0.52);
+      headGroup.add(disc);
+    }
+    const lowerDisc = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 12), creamFeatherMat);
+    lowerDisc.position.set(0, -0.1, 0.255);
+    lowerDisc.scale.set(1.18, 0.82, 0.52);
+    headGroup.add(lowerDisc);
+
+    // Full dynamic 3D facial rig (smile, sad, surprised, blink)
+    face = addFaceDetails(headGroup, {
+      zOffset: 0.354,
+      browColor: 0x0d4f45,
+      isGirl: true,
+    });
+
+    // Cute sculpted amber beak nestled cleanly between eyes and dynamic mouth
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.052, 0.095, 6), beakMat);
+    beak.position.set(0, -0.04, 0.382);
+    beak.rotation.x = Math.PI * 0.62;
+    beak.castShadow = true;
+    headGroup.add(beak);
+
+    // Brushed-gold round scholar spectacles framing the eyes
+    for (const sx of [-1, 1]) {
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.014, 8, 20), goldMetalMat);
+      rim.position.set(sx * 0.132, 0.025, 0.39);
+      headGroup.add(rim);
+    }
+    const glassesBridge = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.08, 8), goldMetalMat);
+    glassesBridge.rotation.z = Math.PI / 2;
+    glassesBridge.position.set(0, 0.032, 0.39);
+    headGroup.add(glassesBridge);
+
+    // Swept feathered owl ear tufts (outer deep teal + inner mint feather)
+    for (const sx of [-1, 1]) {
+      const earOuter = new THREE.Mesh(new THREE.ConeGeometry(0.115, 0.27, 8), featherDeepMat);
+      earOuter.position.set(sx * 0.31, 0.36, 0.02);
+      earOuter.rotation.z = -sx * 0.48;
+      earOuter.castShadow = true;
+      headGroup.add(earOuter);
+
+      const earInner = new THREE.Mesh(new THREE.ConeGeometry(0.062, 0.18, 6), mintFeatherMat);
+      earInner.position.set(sx * 0.295, 0.355, 0.065);
+      earInner.rotation.z = -sx * 0.48;
+      headGroup.add(earInner);
+    }
+
+    // Mini royal-purple scholar cap + golden tassel at crown
+    const capBase = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.1, 16), capMat);
+    capBase.position.set(0, 0.375, -0.02);
+    capBase.castShadow = true;
+    headGroup.add(capBase);
+
+    const capBoard = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.42), capMat);
+    capBoard.position.set(0, 0.445, -0.02);
+    capBoard.rotation.y = Math.PI / 4;
+    capBoard.castShadow = true;
+    headGroup.add(capBoard);
+
+    const capButton = new THREE.Mesh(new THREE.SphereGeometry(0.036, 8, 8), goldMetalMat);
+    capButton.position.set(0, 0.475, -0.02);
+    headGroup.add(capButton);
+
+    const tasselCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.47, -0.02),
+      new THREE.Vector3(0.18, 0.45, 0.04),
+      new THREE.Vector3(0.24, 0.34, 0.08),
+    ]);
+    const tasselCord = new THREE.Mesh(new THREE.TubeGeometry(tasselCurve, 10, 0.014, 6, false), goldMetalMat);
+    headGroup.add(tasselCord);
+
+    const tasselDrop = new THREE.Mesh(new THREE.ConeGeometry(0.036, 0.08, 8), goldMetalMat);
+    tasselDrop.position.set(0.24, 0.3, 0.08);
+    headGroup.add(tasselDrop);
+
+    // Feathered owl torso + scalloped cream belly + team-colored sash & scarf
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.3, 0.58, 16), featherTealMat);
+    torso.position.y = 0.84;
+    torso.castShadow = true;
+    bodyRoot.add(torso);
+
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.23, 14, 12), creamFeatherMat);
+    belly.position.set(0, 0.81, 0.145);
+    belly.scale.set(0.92, 1.12, 0.62);
+    bodyRoot.add(belly);
+
+    // Little mint feather scallops across belly
+    const bellySpots: [number, number][] = [
+      [-0.08, 0.9],
+      [0.08, 0.9],
+      [0, 0.8],
+      [-0.08, 0.71],
+      [0.08, 0.71],
+    ];
+    for (const [bx, by] of bellySpots) {
+      const spot = new THREE.Mesh(new THREE.SphereGeometry(0.036, 8, 6), mintFeatherMat);
+      spot.position.set(bx, by, 0.275);
+      spot.scale.set(1.25, 0.62, 0.3);
+      bodyRoot.add(spot);
+    }
+
+    const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.225, 0.058, 8, 16), accentMat);
+    scarf.rotation.x = Math.PI / 2;
+    scarf.position.y = 1.1;
+    bodyRoot.add(scarf);
+
+    const teamCape = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.48, 0.08), accentMat);
+    teamCape.position.set(0, 0.84, -0.25);
+    teamCape.rotation.x = 0.12;
+    teamCape.castShadow = true;
+    bodyRoot.add(teamCape);
+
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.305, 0.31, 0.075, 16), accentMat);
+    belt.position.y = 0.63;
+    bodyRoot.add(belt);
+
+    const beltMedallion = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.04, 12), goldMetalMat);
+    beltMedallion.rotation.x = Math.PI / 2;
+    beltMedallion.position.set(0, 0.63, 0.295);
+    bodyRoot.add(beltMedallion);
+
+    // Fanned 3-feather owl tail at back
+    for (const angle of [-0.28, 0, 0.28]) {
+      const tailBlade = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.26, 0.04), featherDeepMat);
+      tailBlade.position.set(Math.sin(angle) * 0.14, 0.64, -0.34);
+      tailBlade.rotation.x = 0.55;
+      tailBlade.rotation.z = -angle;
+      tailBlade.castShadow = true;
+      bodyRoot.add(tailBlade);
+    }
+
+    // Articulated feathered owl wings mounted to arm pivots
+    for (const [pivot, dir] of [
+      [leftArmPivot, -1],
+      [rightArmPivot, 1],
+    ] as const) {
+      const upperWing = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), featherTealMat);
+      upperWing.position.set(dir * 0.045, -0.18, 0.01);
+      upperWing.scale.set(0.68, 1.75, 1.05);
+      upperWing.castShadow = true;
+      pivot.add(upperWing);
+
+      const wingStripe = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.1, 0.17), accentMat);
+      wingStripe.position.set(dir * 0.055, -0.26, 0.01);
+      pivot.add(wingStripe);
+
+      const wingTip = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), featherDeepMat);
+      wingTip.position.set(dir * 0.045, -0.37, 0.02);
+      wingTip.scale.set(0.65, 1.25, 0.92);
+      wingTip.castShadow = true;
+      pivot.add(wingTip);
     }
   }
 

@@ -225,7 +225,7 @@ export const PauseModal: React.FC<PauseModalProps> = ({ onResume, onReturnToSetu
           Oyun Duraklatıldı
         </h2>
         <p className="text-sm font-semibold text-[#486581]">
-          Süre durduruldu. Hazır olduğunuzda İstanbul turuna kaldığınız yerden devam edebilirsiniz.
+          Oyun duraklatıldı. Hazır olduğunuzda İstanbul turuna kaldığınız yerden devam edebilirsiniz.
         </p>
         <div className="flex flex-col gap-2.5 pt-2">
           <button

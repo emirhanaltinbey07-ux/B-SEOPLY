@@ -17,7 +17,6 @@ interface BottomDockProps {
   turnPhase: TurnPhase;
   lastDiceValue: number | null;
   bannerMessage: string;
-  isFinalPhase: boolean;
   allQuestionsCompleted?: boolean;
   onRollDice: () => void;
   onDrawQuestionCard: () => void;
@@ -34,7 +33,6 @@ export const BottomDock: React.FC<BottomDockProps> = ({
   turnPhase,
   lastDiceValue,
   bannerMessage,
-  isFinalPhase,
   allQuestionsCompleted = false,
   onRollDice,
   onDrawQuestionCard,
@@ -207,7 +205,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
             type="button"
             onClick={onOpenFinalReview}
             className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-xl border px-2 sm:px-3 py-2 sm:py-2.5 text-[11px] sm:text-xs md:text-sm font-extrabold whitespace-nowrap cursor-pointer ${
-              isFinalPhase
+              allQuestionsCompleted
                 ? 'bg-[#1a5f8a] hover:bg-[#134768] text-white border-[#1a5f8a] ring-2 ring-[#93c5e6]'
                 : 'bg-[#eef5f0] hover:bg-[#dcece1] text-[#175838] border-[#b7dac2]'
             }`}

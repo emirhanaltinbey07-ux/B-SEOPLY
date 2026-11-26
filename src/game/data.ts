@@ -8,8 +8,6 @@ import {
   QuestionCard,
 } from './types';
 
-export const TOTAL_GAME_SECONDS = 25 * 60; // 25 dakika
-export const FINAL_PHASE_THRESHOLD_SECONDS = 5 * 60; // Son 5 dakika
 export const INITIAL_TEAM_BP = 100; // Her takım tam 100 TL ile başlar
 export const START_PASS_BONUS_BP = 50; // Başlangıca her dönüşte +50 TL
 export const REWARD_TILE_BP = 10; // Ödül karesinde +10 TL
@@ -45,12 +43,18 @@ export const CHARACTER_OPTIONS: CharacterOption[] = [
     role: 'Neşeli Bulut Maskotu',
     accentHex: '#0284c7',
   },
+  {
+    id: 'donuslu',
+    name: 'Söz Ustası',
+    role: 'Bilge Baykuş Maskotu',
+    accentHex: '#0f766e',
+  },
 ];
 
 export const DEFAULT_TEAMS_SETUP = [
   { name: 'Boğaz Kartalları', colorId: 'turuncu', characterId: 'etken' as const },
   { name: 'Galata Kâşifleri', colorId: 'mavi', characterId: 'edilgen' as const },
-  { name: 'Haliç Yıldızları', colorId: 'yesil', characterId: 'etken' as const },
+  { name: 'Haliç Yıldızları', colorId: 'yesil', characterId: 'donuslu' as const },
 ];
 
 /**

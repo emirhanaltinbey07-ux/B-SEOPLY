@@ -55,39 +55,75 @@ function CharacterPortraitSvg({
       </svg>
     );
   }
-  // Kişileştirme: Neşeli Bulut Maskotu
+  if (characterId === 'edilgen') {
+    // Kişileştirme: Neşeli Bulut Maskotu
+    return (
+      <svg viewBox="0 0 64 64" className="h-12 w-12 shrink-0" aria-hidden="true">
+        <circle cx="32" cy="32" r="30" fill="#e8f6ff" stroke={accentHex} strokeWidth="3" />
+        {/* Mini rainbow & gold star charm on top */}
+        <path d="M16 20 A9 9 0 0 1 28 14" fill="none" stroke="#ff5a7a" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M18 21 A7 7 0 0 1 27 16" fill="none" stroke="#ffd166" strokeWidth="2.2" strokeLinecap="round" />
+        <polygon
+          points="45,10 46.6,13.4 50.4,13.9 47.6,16.5 48.3,20.2 45,18.4 41.7,20.2 42.4,16.5 39.6,13.9 43.4,13.4"
+          fill="#ffca28"
+          stroke="#d98b00"
+          strokeWidth="0.9"
+        />
+        {/* Fluffy layered cloud head */}
+        <circle cx="21" cy="29" r="9.5" fill="#d8eeff" />
+        <circle cx="43" cy="29" r="9.5" fill="#d8eeff" />
+        <circle cx="25" cy="21" r="9.5" fill="#f7fcff" />
+        <circle cx="39" cy="21" r="9.5" fill="#f7fcff" />
+        <circle cx="32" cy="19" r="10" fill="#ffffff" />
+        <circle cx="32" cy="30" r="12" fill="#ffffff" />
+        <circle cx="22" cy="30" r="8.5" fill="#ffffff" />
+        <circle cx="42" cy="30" r="8.5" fill="#ffffff" />
+        {/* Expressive face */}
+        <circle cx="27.2" cy="28.5" r="2.2" fill="#182235" />
+        <circle cx="27.9" cy="27.8" r="0.75" fill="#ffffff" />
+        <circle cx="36.8" cy="28.5" r="2.2" fill="#182235" />
+        <circle cx="37.5" cy="27.8" r="0.75" fill="#ffffff" />
+        <ellipse cx="22.8" cy="32.2" rx="2.4" ry="1.4" fill="#f79bb2" opacity="0.85" />
+        <ellipse cx="41.2" cy="32.2" rx="2.4" ry="1.4" fill="#f79bb2" opacity="0.85" />
+        <path d="M28.5 33.8 Q32 37.5 35.5 33.8" fill="none" stroke="#2563eb" strokeWidth="1.9" strokeLinecap="round" />
+        {/* Sky-blue tunic + team scarf */}
+        <path d="M18 58 C20 46, 44 46, 46 58 Z" fill="#38bdf8" />
+        <path d="M23 46 Q32 52 41 46" fill="none" stroke={accentHex} strokeWidth="4" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  // Söz Ustası ('donuslu'): Bilge Baykuş Maskotu
   return (
     <svg viewBox="0 0 64 64" className="h-12 w-12 shrink-0" aria-hidden="true">
-      <circle cx="32" cy="32" r="30" fill="#e8f6ff" stroke={accentHex} strokeWidth="3" />
-      {/* Mini rainbow & gold star charm on top */}
-      <path d="M16 20 A9 9 0 0 1 28 14" fill="none" stroke="#ff5a7a" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M18 21 A7 7 0 0 1 27 16" fill="none" stroke="#ffd166" strokeWidth="2.2" strokeLinecap="round" />
-      <polygon
-        points="45,10 46.6,13.4 50.4,13.9 47.6,16.5 48.3,20.2 45,18.4 41.7,20.2 42.4,16.5 39.6,13.9 43.4,13.4"
-        fill="#ffca28"
-        stroke="#d98b00"
-        strokeWidth="0.9"
-      />
-      {/* Fluffy layered cloud head */}
-      <circle cx="21" cy="29" r="9.5" fill="#d8eeff" />
-      <circle cx="43" cy="29" r="9.5" fill="#d8eeff" />
-      <circle cx="25" cy="21" r="9.5" fill="#f7fcff" />
-      <circle cx="39" cy="21" r="9.5" fill="#f7fcff" />
-      <circle cx="32" cy="19" r="10" fill="#ffffff" />
-      <circle cx="32" cy="30" r="12" fill="#ffffff" />
-      <circle cx="22" cy="30" r="8.5" fill="#ffffff" />
-      <circle cx="42" cy="30" r="8.5" fill="#ffffff" />
-      {/* Expressive face */}
-      <circle cx="27.2" cy="28.5" r="2.2" fill="#182235" />
-      <circle cx="27.9" cy="27.8" r="0.75" fill="#ffffff" />
-      <circle cx="36.8" cy="28.5" r="2.2" fill="#182235" />
-      <circle cx="37.5" cy="27.8" r="0.75" fill="#ffffff" />
-      <ellipse cx="22.8" cy="32.2" rx="2.4" ry="1.4" fill="#f79bb2" opacity="0.85" />
-      <ellipse cx="41.2" cy="32.2" rx="2.4" ry="1.4" fill="#f79bb2" opacity="0.85" />
-      <path d="M28.5 33.8 Q32 37.5 35.5 33.8" fill="none" stroke="#2563eb" strokeWidth="1.9" strokeLinecap="round" />
-      {/* Sky-blue tunic + team scarf */}
-      <path d="M18 58 C20 46, 44 46, 46 58 Z" fill="#38bdf8" />
-      <path d="M23 46 Q32 52 41 46" fill="none" stroke={accentHex} strokeWidth="4" strokeLinecap="round" />
+      <circle cx="32" cy="32" r="30" fill="#e8faf4" stroke={accentHex} strokeWidth="3" />
+      {/* Scholar cap & tassel */}
+      <polygon points="32,7 45,12 32,17 19,12" fill="#4c2882" />
+      <rect x="25" y="13" width="14" height="5" rx="2" fill="#3b1d69" />
+      <path d="M43 12 Q47 16 47 21" fill="none" stroke="#f6c945" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="47" cy="21.5" r="2" fill="#f6c945" />
+      {/* Feathered owl ear tufts */}
+      <polygon points="18,16 25,21 20,27" fill="#0e5c4e" />
+      <polygon points="46,16 39,21 44,27" fill="#0e5c4e" />
+      {/* Owl head & cream facial discs */}
+      <circle cx="32" cy="30" r="13.5" fill="#168a73" />
+      <circle cx="26.5" cy="30" r="6.8" fill="#f5fbf7" />
+      <circle cx="37.5" cy="30" r="6.8" fill="#f5fbf7" />
+      <ellipse cx="32" cy="35" rx="7.5" ry="5" fill="#f5fbf7" />
+      {/* Golden spectacles + expressive eyes */}
+      <circle cx="26.5" cy="29.5" r="4.8" fill="none" stroke="#f6c945" strokeWidth="1.6" />
+      <circle cx="37.5" cy="29.5" r="4.8" fill="none" stroke="#f6c945" strokeWidth="1.6" />
+      <line x1="31.3" y1="29.5" x2="32.7" y2="29.5" stroke="#f6c945" strokeWidth="1.6" />
+      <circle cx="26.5" cy="29.5" r="2.2" fill="#182235" />
+      <circle cx="27.2" cy="28.8" r="0.75" fill="#ffffff" />
+      <circle cx="37.5" cy="29.5" r="2.2" fill="#182235" />
+      <circle cx="38.2" cy="28.8" r="0.75" fill="#ffffff" />
+      {/* Amber beak + friendly smile */}
+      <polygon points="30.2,32.2 33.8,32.2 32,35.4" fill="#f59e0b" />
+      <path d="M29 36.8 Q32 39 35 36.8" fill="none" stroke="#0d4f45" strokeWidth="1.6" strokeLinecap="round" />
+      {/* Feathered body + team scarf */}
+      <path d="M17 58 C19 45, 45 45, 47 58 Z" fill="#168a73" />
+      <path d="M25 47 L39 47 L37 58 L27 58 Z" fill="#f5fbf7" />
+      <path d="M22 45 Q32 51 42 45" fill="none" stroke={accentHex} strokeWidth="4" strokeLinecap="round" />
     </svg>
   );
 }
@@ -233,7 +269,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
               </h2>
             </div>
             <div className="text-[11px] sm:text-xs font-bold text-[#4a3569] bg-[#f4eefb] border border-[#dccdf0] rounded-lg px-2.5 sm:px-3 py-1">
-              Başlangıç: 100 TL · 20 Türkçe Sorusu (2 dk) · 25 Dakika · En Çok İlçe Alan Kazanır
+              Başlangıç: 100 TL · 20 Türkçe Sorusu (2 dk) · En Çok İlçe Alan Kazanır
             </div>
           </div>
 
@@ -280,7 +316,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
                       {CHARACTER_OPTIONS.find((c) => c.id === team.characterId)?.role}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5">
                     {CHARACTER_OPTIONS.map((charOpt) => {
                       const selected = team.characterId === charOpt.id;
                       return (
@@ -288,7 +324,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
                           key={charOpt.id}
                           type="button"
                           onClick={() => handleCharacterSelect(idx, charOpt.id)}
-                          className={`rounded-lg border px-2 py-2 text-xs font-extrabold transition-all cursor-pointer text-center ${
+                          className={`rounded-lg border px-1.5 py-2 text-[11px] font-extrabold transition-all cursor-pointer text-center leading-tight ${
                             selected
                               ? 'bg-[#0f2942] text-white border-[#0f2942] shadow-sm'
                               : 'bg-[#f6f8fa] text-[#28445c] border-[#d7e1e8] hover:border-[#6d44a6]'

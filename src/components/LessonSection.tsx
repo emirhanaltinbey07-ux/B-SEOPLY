@@ -46,10 +46,7 @@ export const LessonSection: React.FC<LessonSectionProps> = ({ onStartGameSection
     '01': true,
     '02': true,
   });
-  const [expandedKisilestirme, setExpandedKisilestirme] = useState<Record<string, boolean>>({
-    '01': true,
-    '02': true,
-  });
+  const [expandedKisilestirme, setExpandedKisilestirme] = useState<Record<string, boolean>>({});
   const [activeElementFilter, setActiveElementFilter] = useState<BenzetmeElementKey | 'all'>('all');
 
   const topicMeta = useMemo(
@@ -602,16 +599,11 @@ export const LessonSection: React.FC<LessonSectionProps> = ({ onStartGameSection
                         </span>
                       </div>
 
-                      {/* Sentence & Kid-Friendly Explanation */}
+                      {/* Sentence & Click-to-Reveal Kişileştirme Analysis */}
                       <div className="p-4 flex-1 flex flex-col justify-between gap-3">
-                        <div className="space-y-2">
-                          <h3 className="text-base sm:text-lg font-extrabold text-[#142236] leading-snug">
-                            {item.sentence}
-                          </h3>
-                          <p className="text-xs sm:text-sm font-semibold text-[#475d78] leading-relaxed">
-                            {item.kidExplanation}
-                          </p>
-                        </div>
+                        <h3 className="text-base sm:text-lg font-extrabold text-[#142236] leading-snug">
+                          {item.sentence}
+                        </h3>
 
                         <div className="pt-1">
                           <button
@@ -631,21 +623,26 @@ export const LessonSection: React.FC<LessonSectionProps> = ({ onStartGameSection
                           </button>
 
                           {isOpen && (
-                            <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <div className="rounded-lg border border-[#bce4ee] bg-[#f4fbfd] px-3 py-2">
-                                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#0d94b2]">
-                                  Kişileştirilen Varlık
+                            <div className="mt-2.5 space-y-2.5">
+                              <p className="rounded-lg border border-[#f2d6e5] bg-[#fff9fc] px-3 py-2 text-xs sm:text-sm font-semibold text-[#475d78] leading-relaxed">
+                                {item.kidExplanation}
+                              </p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div className="rounded-lg border border-[#bce4ee] bg-[#f4fbfd] px-3 py-2">
+                                  <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#0d94b2]">
+                                    Kişileştirilen Varlık
+                                  </div>
+                                  <div className="mt-0.5 text-xs sm:text-sm font-extrabold text-[#142236]">
+                                    {item.varlik}
+                                  </div>
                                 </div>
-                                <div className="mt-0.5 text-xs sm:text-sm font-extrabold text-[#142236]">
-                                  {item.varlik}
-                                </div>
-                              </div>
-                              <div className="rounded-lg border border-[#f2c8de] bg-[#fef7fa] px-3 py-2">
-                                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#d81b75]">
-                                  Verilen İnsan Özelliği
-                                </div>
-                                <div className="mt-0.5 text-xs sm:text-sm font-extrabold text-[#142236]">
-                                  {item.insanOzelligi}
+                                <div className="rounded-lg border border-[#f2c8de] bg-[#fef7fa] px-3 py-2">
+                                  <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#d81b75]">
+                                    Verilen İnsan Özelliği
+                                  </div>
+                                  <div className="mt-0.5 text-xs sm:text-sm font-extrabold text-[#142236]">
+                                    {item.insanOzelligi}
+                                  </div>
                                 </div>
                               </div>
                             </div>

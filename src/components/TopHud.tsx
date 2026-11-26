@@ -1,13 +1,12 @@
 import React from 'react';
-import { BookOpen, Building2, Clock, Compass, MapPin, Pause, Volume2, VolumeX } from 'lucide-react';
-import { BOARD_TILES, CHARACTER_OPTIONS, FINAL_PHASE_THRESHOLD_SECONDS, QUESTIONS_PER_TEAM } from '../game/data';
-import { formatCountdown, getTeamRealEstateCount } from '../game/engine';
+import { BookOpen, Building2, Compass, MapPin, Pause, Volume2, VolumeX } from 'lucide-react';
+import { BOARD_TILES, CHARACTER_OPTIONS, QUESTIONS_PER_TEAM } from '../game/data';
+import { getTeamRealEstateCount } from '../game/engine';
 import { Team } from '../game/types';
 
 interface TopHudProps {
   teams: Team[];
   activeTeamIndex: number;
-  remainingSeconds: number;
   questionsSolved: number;
   totalQuestions: number;
   muted: boolean;
@@ -20,7 +19,6 @@ interface TopHudProps {
 export const TopHud: React.FC<TopHudProps> = ({
   teams,
   activeTeamIndex,
-  remainingSeconds,
   questionsSolved,
   totalQuestions,
   muted,
@@ -29,18 +27,16 @@ export const TopHud: React.FC<TopHudProps> = ({
   onResetCamera,
   onOpenLesson,
 }) => {
-  const isFinal5Min = remainingSeconds <= FINAL_PHASE_THRESHOLD_SECONDS;
-
   return (
     <header className="fixed top-[max(0.5rem,env(safe-area-inset-top))] left-2 right-2 sm:left-3 sm:right-3 z-20 flex flex-col lg:flex-row lg:flex-wrap lg:items-center lg:justify-between gap-1.5 lg:gap-2 pointer-events-none">
-      {/* Mobile Row 1 (Brand + Timer + Utilities) / Desktop Left Block (Brand + Timer) */}
+      {/* Mobile Row 1 (Brand + Utilities) / Desktop Left Block (Brand) */}
       <div className="flex items-center justify-between gap-1.5 lg:contents">
-        {/* Brand + 25:00 Timer + Question Progress */}
+        {/* Brand + Question Progress */}
         <div
           className="flex items-center gap-2 sm:gap-2.5 rounded-xl border-2 border-[#d4c3a3] px-2.5 sm:px-3 py-1 sm:py-1.5 shadow-lg pointer-events-auto lg:order-1"
           style={{ backgroundColor: 'rgba(252, 249, 242, 0.96)' }}
         >
-          <div className="flex items-center gap-1.5 pr-2 border-r border-[#dfd3be]">
+          <div className="flex items-center gap-2">
             <span className="inline-flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-lg bg-[#6d44a6] text-white font-display font-black text-xs sm:text-sm shadow-sm">
               S
             </span>
@@ -52,23 +48,6 @@ export const TopHud: React.FC<TopHudProps> = ({
                 Soru {questionsSolved}/{totalQuestions}
               </div>
             </div>
-          </div>
-
-          <div
-            className={`flex items-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-2.5 py-0.5 sm:py-1 font-mono-num text-xs sm:text-sm font-extrabold border ${
-              isFinal5Min
-                ? 'bg-[#fff0ec] text-[#c42d2d] border-[#e5928c]'
-                : 'bg-[#edf6fb] text-[#0f2942] border-[#c5dfee]'
-            }`}
-            aria-label={`Kalan süre ${formatCountdown(remainingSeconds)}`}
-          >
-            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-            <span>{formatCountdown(remainingSeconds)}</span>
-            {isFinal5Min && (
-              <span className="hidden sm:inline text-[10px] font-sans font-extrabold uppercase tracking-wide ml-1">
-                Son 5 Dk
-              </span>
-            )}
           </div>
         </div>
 

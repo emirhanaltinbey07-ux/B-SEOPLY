@@ -23,10 +23,8 @@ import {
   CHANCE_CARDS,
   CHARACTER_OPTIONS,
   DEFAULT_TEAMS_SETUP,
-  FINAL_PHASE_THRESHOLD_SECONDS,
   PROPERTY_ASSETS,
   QUESTION_CARDS,
-  TOTAL_GAME_SECONDS,
 } from './game/data';
 import {
   advanceToNextTeam,
@@ -142,28 +140,6 @@ export default function App() {
     }
     prevScreenRef.current = gameState.screen;
   }, [gameState.screen, gameState.teams]);
-
-  // 25:00 Lesson Countdown Timer (automatically paused while reviewing Part 1: Konu Anlatımı)
-  useEffect(() => {
-    if (appSection !== 'game' || gameState.screen !== 'playing' || gameState.timerPaused) return;
-    const interval = window.setInterval(() => {
-      setGameState((prev) => {
-        if (prev.screen !== 'playing' || prev.timerPaused) return prev;
-        if (prev.remainingSeconds <= 1) {
-          return { ...prev, remainingSeconds: 0 };
-        }
-        return { ...prev, remainingSeconds: prev.remainingSeconds - 1 };
-      });
-    }, 1000);
-    return () => window.clearInterval(interval);
-  }, [appSection, gameState.screen, gameState.timerPaused]);
-
-  // Trigger Final Evaluation when 25:00 timer hits 00:00
-  useEffect(() => {
-    if (gameState.screen === 'playing' && gameState.remainingSeconds === 0) {
-      setShowFinalReview(true);
-    }
-  }, [gameState.screen, gameState.remainingSeconds]);
 
   // Action callbacks kept in refs for stable single-mount WebGL listener wiring
   const handleRollDice = useCallback(() => {
@@ -600,7 +576,7 @@ export default function App() {
   };
 
   const handleAnnounceWinner = () => {
-    setGameState((prev) => ({ ...prev, screen: 'gameover', timerPaused: true }));
+    setGameState((prev) => ({ ...prev, screen: 'gameover' }));
   };
 
   const handleToggleMute = () => {
@@ -671,7 +647,6 @@ export default function App() {
             <TopHud
               teams={gameState.teams}
               activeTeamIndex={gameState.activeTeamIndex}
-              remainingSeconds={gameState.remainingSeconds}
               questionsSolved={gameState.answeredQuestions.length}
               totalQuestions={QUESTION_CARDS.length}
               muted={muted}
@@ -690,7 +665,6 @@ export default function App() {
           turnPhase={gameState.turnPhase}
           lastDiceValue={gameState.lastDiceValue}
           bannerMessage={gameState.bannerMessage}
-          isFinalPhase={gameState.remainingSeconds <= FINAL_PHASE_THRESHOLD_SECONDS}
           allQuestionsCompleted={areAllQuestionsCompleted(gameState)}
           onRollDice={handleRollDice}
           onDrawQuestionCard={handleDrawQuestionCard}
@@ -807,14 +781,7 @@ export default function App() {
       {showTeacherPanel && (
         <TeacherPanelModal
           gameState={gameState}
-          onToggleTimerPause={() =>
-            setGameState((p) => ({ ...p, timerPaused: !p.timerPaused }))
-          }
-          onResetTimer={() =>
-            setGameState((p) => ({ ...p, remainingSeconds: TOTAL_GAME_SECONDS, timerPaused: false }))
-          }
-          onJumpToFinal5Min={() => {
-            setGameState((p) => ({ ...p, remainingSeconds: FINAL_PHASE_THRESHOLD_SECONDS }));
+          onOpenFinalReview={() => {
             setShowTeacherPanel(false);
             setShowFinalReview(true);
           }}

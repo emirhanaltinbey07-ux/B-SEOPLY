@@ -39,7 +39,6 @@ import {
   QUESTION_CARDS,
   QUESTION_TIME_LIMIT_SECONDS,
   QUESTIONS_PER_TEAM,
-  TOTAL_GAME_SECONDS,
 } from './data';
 
 test('24-tile track has exact composition: 1 start, 11 Istanbul locations (incl. Taksim), 5 questions, 4 rewards, 3 jails', () => {
@@ -234,7 +233,6 @@ test('all 20 questions can be played cleanly across 3 teams (7+7+6) and victory 
   assert.equal(state.answeredQuestions.length, 20);
   assert.equal(areAllQuestionsCompleted(state), true);
   assert.equal(state.screen, 'gameover');
-  assert.equal(state.timerPaused, true);
   assert.deepEqual(
     state.teams.map((t) => t.questionsAnswered),
     [7, 7, 6]
@@ -248,8 +246,8 @@ test('all 20 questions can be played cleanly across 3 teams (7+7+6) and victory 
   const ranked = getRankedTeams(customTeams);
   assert.equal(getTeamRealEstateCount(ranked[0]), 3);
   assert.equal(ranked[0].id, 2);
-  assert.equal(TOTAL_GAME_SECONDS, 25 * 60);
-  assert.equal(formatCountdown(TOTAL_GAME_SECONDS), '25:00');
+  assert.equal(QUESTION_TIME_LIMIT_SECONDS, 120);
+  assert.equal(formatCountdown(QUESTION_TIME_LIMIT_SECONDS), '02:00');
 });
 
 test('game automatically transitions to gameover when the 20th question completes (wrong/timeout, property purchase/skip, or extra-roll card)', () => {
@@ -270,7 +268,6 @@ test('game automatically transitions to gameover when the 20th question complete
   assert.equal(areAllQuestionsCompleted(wrongEnd), true);
   wrongEnd = completeQuestionWithoutBonus(wrongEnd);
   assert.equal(wrongEnd.screen, 'gameover');
-  assert.equal(wrongEnd.timerPaused, true);
 
   // Branch B: 20th question times out -> completeQuestionWithoutBonus ends game immediately
   let timeoutEnd = timeoutQuestion(base, lastQ);
@@ -285,7 +282,6 @@ test('game automatically transitions to gameover when the 20th question complete
   correctBuyEnd = drawPropertyCard(correctBuyEnd, 0);
   correctBuyEnd = purchaseActiveProperty(correctBuyEnd);
   assert.equal(correctBuyEnd.screen, 'gameover');
-  assert.equal(correctBuyEnd.timerPaused, true);
 
   // Branch D: 20th question answered correctly -> skip bonus -> draw & skip property -> gameover!
   let correctSkipEnd = submitQuestionAnswer(base, lastQ, OFFICIAL_ANSWER_KEY[lastQ]);
@@ -309,17 +305,18 @@ test('game automatically transitions to gameover when the 20th question complete
   assert.equal(blockedRoll.screen, 'gameover');
 });
 
-test('team characters are only Benzetme (Cesur Aslan) and Kişileştirme (Neşeli Bulut) with exact avatar IDs and defaults', () => {
+test('team characters include 3 distinct mascots (Cesur Aslan, Neşeli Bulut, Bilge Baykuş) with unique team defaults', () => {
   assert.deepEqual(
     CHARACTER_OPTIONS.map((c) => ({ id: c.id, name: c.name, role: c.role })),
     [
       { id: 'etken', name: 'Benzetme', role: 'Cesur Aslan Maskotu' },
       { id: 'edilgen', name: 'Kişileştirme', role: 'Neşeli Bulut Maskotu' },
+      { id: 'donuslu', name: 'Söz Ustası', role: 'Bilge Baykuş Maskotu' },
     ]
   );
   assert.deepEqual(
     DEFAULT_TEAMS_SETUP.map((t) => t.characterId),
-    ['etken', 'edilgen', 'etken']
+    ['etken', 'edilgen', 'donuslu']
   );
 });
 
